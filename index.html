@@ -131,9 +131,26 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .rr{display:grid;grid-template-columns:100px 100px minmax(120px,1fr) 120px auto;gap:10px;align-items:end;border:1px solid var(--line);background:#fffdf8;border-radius:10px;padding:10px;margin:8px 0}.rr>*{min-width:0}
 @media(max-width:760px){.rr{grid-template-columns:1fr 1fr}.rr button{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-body.off header::after{content:"OFFLINE - nothing saves";color:#fff;background:#c00;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.ro header::after{content:"READ ONLY - not the official page";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.old header::after{content:"OLD COPY - read only";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}</style></head><body>
+body.off header::after{content:"OFFLINE - nothing saves";color:#fff;background:#c00;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.ro header::after{content:"READ ONLY - not the official page";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.old header::after{content:"OLD COPY - read only";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}
+/* ===== iOS installed web app: solid strip behind the translucent status bar (same fix as the POS) =====
+   Without it the system blur fades over the light page colour. env() is 0 on desktop, so desktop is unaffected. */
+html{background-color:#2a2118}
+body{min-height:100vh;min-height:100dvh;background:var(--bg)}
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#2a2118;z-index:99999;pointer-events:none}
+@media print{body::before{display:none}}
+header b{cursor:pointer;-webkit-user-select:none;user-select:none}
+/* Stock search/filter: toggle button exists on phones only */
+.fbtog{display:none}
+@media(max-width:760px){
+.md{padding-top:calc(14px + env(safe-area-inset-top))}
+.fbtog{display:flex;justify-content:space-between;align-items:center;width:100%;margin:8px 0;text-align:left;font-weight:600}
+.fbtog.on{border-color:var(--gold2);background:#fffaf0}
+.fbtog.on>span:first-child::after{content:" \2022 active";color:var(--gold);font-weight:700}
+.fbar.cl{display:none}
+}
+</style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
-<header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b>Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><button onclick="go('home')">Home</button><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
+<header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="go('home')" onkeydown="if(event.key=='Enter')go('home')">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
 <main id="app"></main><div id="lbl"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -199,6 +216,8 @@ function psStart(){psStop();if(!window.FB||!FB.auth.currentUser)return;
  hsCheck()}
 async function psRun(id){try{const r=await runTransaction(R('printQueue/'+id+'/status'),c=>c=='pending'?'printing':undefined);if(!r.committed)return;
  const j=PSJ[id]||{},l=Object.values(j.tags||{});try{await printLocal(l,1);await update(R('printQueue/'+id),{status:'done',doneAt:SNOW()});toast('Printed '+l.length+' tag(s) sent from '+(j.by||'another device'))}catch(e){await update(R('printQueue/'+id),{status:'error',err:String(e.message||e)});toast('Print failed: '+e.message,1)}}catch(e){}}
+window.refreshApp=async()=>{toast('Refreshing…');try{if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})))}}catch(e){}
+ const u=new URL(location.href);u.searchParams.set('r',Date.now());location.replace(u.toString())};
 window.tgDev=(k,v)=>{if(k=='name'){lss('tg_dev',v);return}lss('tg_ps',k=='ps'&&v?'1':'0');lss('tg_rm',k=='rm'&&v?'1':'0');psStart();render()};
 function devCard(){const u=window.FB&&FB.auth.currentUser;return`<div class="lysec"><b>This device</b><p class="mut" style="margin:4px 0">Signed in as ${hx(u?u.email:'')} <button onclick="signOutTG()">Sign out</button></p>
  <label><input type="checkbox" style="width:auto" ${lsg('tg_ps')=='1'?'checked':''} onchange="tgDev('ps',this.checked)"> Print server: this PC prints tags sent from other devices (keep this Tag Generator tab open and the print helper running here)</label><br>
@@ -217,7 +236,7 @@ const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CS
 let S={stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
 let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
 
-window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0()}if(v=='auto'||v=='bulk'){mode=v;vou=null;F={cat:CATS[0]};editing=null}render()};
+window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;vou=null;F={cat:CATS[0]};editing=null}render()};
 const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
 const vous=()=>[...new Set([...live().map(t=>+t.vou),...Object.keys(S.cfg.vous||{}).map(Number)])].filter(Boolean).sort((a,b)=>a-b);
 const maxVou=()=>Math.max(0,...Object.values(S.tags).map(t=>+t.vou||0),...Object.keys(S.cfg.vous||{}).map(Number));
@@ -232,8 +251,8 @@ function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='item')return Object.values(S.items).filter(i=>i.cat==c).map(i=>i.name).sort();
  if(f=='stamp')return Object.values(S.stamps).filter(s=>stC(s).includes(c)).map(s=>s.name);
  if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
-function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['fetch','🔎','Fetch / Delete','Find tags by number, voucher, item or date, then delete'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, layout, printer']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
- else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='fetch')fetchUI(a);else if(view=='reprint')reprint(a);else entry(a)}
+function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, layout, printer']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
+ else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else entry(a)}
 function entry(a){const vl=vous();if(vou==null)vou=vl.length?vl[vl.length-1]:maxVou()+1;
  const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
  const fh=([f,l,t])=>{if(MGS.includes(f))return MGK[f]?mgHtml(MGK[f],'F'):'';const o=t=='sel'?opts(f):null;const v=F[f]??'';
@@ -411,12 +430,14 @@ function stFB(){const base=live().filter(t=>stI!=null?t.item==stI:(!filt||t.cat=
  const sel=(l,f)=>`<div><label>${l}</label><select onchange="stF.${f}=this.value;stR()"><option value="">All</option>${dv(f).map(v=>`<option value="${hx(v)}" ${stF[f]==v?'selected':''}>${hx(v)}</option>`).join('')}</select></div>`;
  return`${stI==null?`<div><label>Category</label><select onchange="filt=this.value;stF=stF0();render()"><option value="">All</option>${CATS.map(c=>`<option ${c==filt?'selected':''}>${c}</option>`).join('')}</select></div>`:''}${sel('Stamp','stamp')}${sel('Size','size')}${sel('Design','design')}<div><label>Sale making</label><select onchange="stF.mk=this.value;stR()"><option value="">All</option><option value="y" ${stF.mk=='y'?'selected':''}>Set</option><option value="n" ${stF.mk=='n'?'selected':''}>Not set</option></select></div><div><label>Net wt from</label><input inputmode="decimal" value="${hx(stF.wmin)}" oninput="stF.wmin=this.value.trim();stR()"></div><div><label>Net wt to</label><input inputmode="decimal" value="${hx(stF.wmax)}" oninput="stF.wmax=this.value.trim();stR()"></div><div><button onclick="stF=stF0();render()">Clear filters</button></div>`}
 function stock(a){const bx=`<div class="grow"><label>Search</label><input placeholder="${stI!=null?'Tag no, stamp, size, design, HUID':'Item, tag no, stamp, size, design, HUID'}" value="${hx(stQ)}" oninput="stS(this.value)"></div>`;
- const fb=`<div class="fbar${stFa()?' on':''}" id="stf">${bx}${stFB()}</div>`;
+ const fb=`<button class="fbtog${stFa()||stQ?' on':''}" id="stfb" onclick="stTog()"><span>🔍 Search &amp; filter</span><span id="stfa">${stOpen?'▴':'▾'}</span></button><div class="fbar${stFa()?' on':''}${stOpen?'':' cl'}" id="stf">${bx}${stFB()}</div>`;
  a.innerHTML=stI!=null?`<div class="bar"><button onclick="stI=null;stQ='';stF=stF0();render()">◀ All items</button></div><h3>Stock — ${hx(stI)}</h3>${fb}<div id="stt">${stT()}</div>`:`<h3>Stock</h3>${fb}<div id="stt">${stT()}</div>`}
-window.stR=()=>{const t=$('#stt');if(t)t.innerHTML=stT();const f=$('#stf');if(f)f.classList.toggle('on',stFa())};
+let stOpen=false; /* phones: search/filter box starts collapsed */
+window.stTog=()=>{stOpen=!stOpen;const f=$('#stf');if(f)f.classList.toggle('cl',!stOpen);const x=$('#stfa');if(x)x.textContent=stOpen?'▴':'▾'};
+window.stR=()=>{const t=$('#stt');if(t)t.innerHTML=stT();const f=$('#stf');if(f)f.classList.toggle('on',stFa());const g=$('#stfb');if(g)g.classList.toggle('on',!!(stFa()||stQ))};
 window.stS=v=>{stQ=v;stR()};
 window.stSo=(w,c)=>{const s=w=='L'?stSL:stSD;if(s.k==c)s.d=-s.d;else{s.k=c;s.d=1}stR()};
-window.stO=i=>{stI=i;stQ='';stF=stF0();render();scrollTo(0,0)};
+window.stO=i=>{stI=i;stQ='';stF=stF0();stOpen=false;render();scrollTo(0,0)};
 let ME=null;
 window.stEd=no=>{const t=S.tags[no];if(!t)return;ME={no,o:t,f:{...t}};stMo()};
 function stMo(){const t=ME.o,f=ME.f;
@@ -447,39 +468,6 @@ window.stMs=async pr=>{if(!ME)return;if(!n(ME.f.gw)&&!(n(ME.f.mrp)>0))return ale
 window.stMd=async()=>{if(!ME||!confirm('Delete tag '+ME.no+'? Its number stays blocked.'))return;const no=ME.no;await stKeep(async()=>{await update(R('tags/'+no),{status:'archived'});stMc()})};
 document.addEventListener('keydown',e=>{if(e.key=='Escape'&&ME)stMc()});
 
-/* ---- Fetch / Delete: find tags by criteria, then delete or reprint the selected ones ---- */
-const FD={vf:'',vt:'',tf:'',tt:'',item:'',pr:'',df:'',dt:'',res:null,sel:{}};
-const fdNo=x=>{const m=/^(.*?)(\d+)$/.exec(String(x).trim().toUpperCase());return m?{p:m[1],n:+m[2]}:null};
-function fdMatch(t){const q=FD;if(q.vf!==''&&!(+t.vou>=+q.vf))return 0;if(q.vt!==''&&!(+t.vou<=+q.vt))return 0;if(q.item&&t.item!=q.item)return 0;
- if(q.pr=='1'&&!t.printed)return 0;if(q.pr=='0'&&t.printed)return 0;const d=t.ts?new Date(t.ts):null;
- if(q.df&&(!d||d<new Date(q.df+'T00:00:00')))return 0;if(q.dt&&(!d||d>new Date(q.dt+'T23:59:59')))return 0;
- if(q.tf||q.tt){const a=fdNo(q.tf||q.tt),b=fdNo(q.tt||q.tf),x=fdNo(t.tagNo);if(!x||x.p!=a.p||x.n<a.n||x.n>b.n)return 0}return 1}
-window.fdGo=()=>{['vf','vt','tf','tt','item','pr','df','dt'].forEach(x=>{const e=$('#fd_'+x);if(e)FD[x]=e.value.trim()});
- if((FD.tf&&!fdNo(FD.tf))||(FD.tt&&!fdNo(FD.tt)))return alert('Tag numbers must end with digits, for example GRG25');
- const a=fdNo(FD.tf||FD.tt),b=fdNo(FD.tt||FD.tf);if(a&&b&&a.p!=b.p)return alert('From and To tag numbers must have the same prefix');
- FD.res=live().filter(fdMatch).sort(tagCmp).map(t=>t.tagNo);FD.sel={};render()};
-window.fdClr=()=>{Object.assign(FD,{vf:'',vt:'',tf:'',tt:'',item:'',pr:'',df:'',dt:'',res:null,sel:{}});render()};
-window.fdTog=(t,c)=>{FD.sel[t]=c;render()};
-window.fdAll=c=>{FD.sel={};if(c)(FD.res||[]).forEach(x=>FD.sel[x]=true);render()};
-const fdRows=()=>(FD.res||[]).map(x=>S.tags[x]).filter(t=>t&&t.status!='archived');
-window.fdDel=async()=>{const ks=fdRows().filter(t=>FD.sel[t.tagNo]).map(t=>t.tagNo);if(!ks.length)return alert('Select tags first');const free=$('#fdfree')&&$('#fdfree').checked;
- if(!confirm('Delete '+ks.length+' tag'+(ks.length>1?'s':'')+'?\n\n'+(free?'Their numbers become free again. A backup file downloads first.':'Their numbers stay blocked and are never reused.')))return;
- if(ks.length>=20&&(prompt('Type DELETE to delete '+ks.length+' tags')||'').trim()!='DELETE')return alert('Cancelled. Nothing was deleted.');
- if(free){exportDB();await new Promise(r=>setTimeout(r,800))}
- for(let i=0;i<ks.length;i+=400){const b={};ks.slice(i,i+400).forEach(x=>{if(free)b['tags/'+x]=null;else b['tags/'+x+'/status']='archived'});await update(R(''),b)}
- FD.sel={};editing=null;toast('✓ '+ks.length+' tag'+(ks.length>1?'s':'')+' deleted');render()};
-window.fdPrint=()=>{const l=fdRows().filter(t=>FD.sel[t.tagNo]).map(liveTag);if(!l.length)return alert('Select tags first');printTags(l)};
-function fetchUI(a){const rs=fdRows(),sel=rs.filter(t=>FD.sel[t.tagNo]),sum=f=>rs.reduce((s,t)=>s+n(t[f]),0),items=Object.values(S.items||{}).map(i=>i.name).sort();
- const inp=(id,l,ph)=>`<div><label>${l}</label><input id="fd_${id}" value="${hx(FD[id])}" ${ph?`placeholder="${ph}"`:''} onkeydown="if(event.key=='Enter')fdGo()"></div>`;
- const dt=t=>t.ts?new Date(t.ts).toLocaleDateString('en-GB'):'';
- a.innerHTML=`<h3>Fetch / Delete</h3><div class="card"><div class="grid">${inp('vf','Voucher from')}${inp('vt','Voucher to')}${inp('tf','Tag no from','e.g. GRG1')}${inp('tt','Tag no to','e.g. GRG50')}
- <div><label>Item</label><select id="fd_item"><option value="">All</option>${items.map(i=>`<option ${i==FD.item?'selected':''}>${hx(i)}</option>`).join('')}</select></div>
- <div><label>Printed</label><select id="fd_pr">${[['','All'],['1','Printed'],['0','Not printed']].map(([v,l])=>`<option value="${v}" ${v==FD.pr?'selected':''}>${l}</option>`).join('')}</select></div>
- <div><label>Date from</label><input id="fd_df" type="date" value="${FD.df}"></div><div><label>Date to</label><input id="fd_dt" type="date" value="${FD.dt}"></div></div>
- <div class="bar"><button class="p" onclick="fdGo()">Fetch</button><button onclick="fdClr()">Clear</button></div></div>`
- +(FD.res==null?'':`<div class="card">${chips(rs.length,sum('gw'),sum('nw'))}${rs.length?`<div class="bar"><button class="p" onclick="fdPrint()">Reprint selected (${sel.length})</button><button style="border-color:#b00;color:#b00" onclick="fdDel()">Delete selected (${sel.length})</button><label><input type="checkbox" id="fdfree" style="width:auto"> also free the tag numbers</label></div>
- <div class="tw"><table><tr><th><input type="checkbox" style="width:auto" ${sel.length==rs.length?'checked':''} onchange="fdAll(this.checked)"></th><th>Tag</th><th>Item</th><th class="num">Gross</th><th class="num">Net</th><th>Stamp</th><th>Size</th><th>Vou</th><th>Date</th><th>Printed</th></tr>
- ${rs.slice(0,500).map(t=>`<tr><td><input type="checkbox" style="width:auto" data-t="${hx(t.tagNo)}" ${FD.sel[t.tagNo]?'checked':''} onchange="fdTog(this.dataset.t,this.checked)"></td><td>${hx(t.tagNo)}</td><td>${hx(t.item)}</td><td class="num">${hx(t.gw)}</td><td class="num">${hx(t.nw)}</td><td>${hx(t.stamp)}</td><td>${hx(t.size)}</td><td>${t.vou?'V'+hx(t.vou):''}</td><td>${dt(t)}</td><td>${t.printed?'Yes':''}</td></tr>`).join('')}</table></div>${rs.length>500?'<p class="mut">Showing the first 500. Select all still selects every fetched tag.</p>':''}`:'<p class="mut">No tags match.</p>'}</div>`)}
 function reprint(a){if(!RP.rows||!RP.rows.length)RP.rows=[''];RP.st=RP.st||{};
  a.innerHTML=`<h3>Tag Print</h3><div class="card"><label>Barcode numbers — one per line (Enter = next line)</label>${RP.rows.map((v,i)=>`<div class="rpr bar" style="flex-wrap:nowrap;margin:6px 0"><input data-i="${i}" value="${hx(v)}" placeholder="e.g. 9BA3" autocapitalize="characters" autocomplete="off" oninput="rpIn(${i},this.value)" onchange="rpCh(${i},this.value)" onkeydown="if(event.key=='Enter'){event.preventDefault();rpNext(${i})}"><button class="p" onclick="rpOne(${i})">Print</button><button onclick="rpDel(${i})">✕</button></div><div class="mut" id="rps${i}" style="margin:-2px 0 4px 2px;font-size:12.5px">${RP.st[i]||''}</div>`).join('')}
  <div class="bar"><button onclick="RP.rows.push('');render();rpFocus(RP.rows.length-1)">+ Add line</button><button class="p" onclick="rpPrint()">Print all</button><button onclick="RP={rows:[''],st:{},msg:''};render()">Clear</button></div><div id="rpm">${RP.msg||''}</div></div>`}
@@ -506,7 +494,7 @@ function settings(a){const tb=['stamps','designs','items','layout','print'].map(
  if(sub=='layout')h=layoutUI();
  if(sub=='print'){const c=S.cfg.nudge||{x:0,y:0};h=devCard()+`<div class="grid"><div><label>Nudge X (mm)</label><input id="nx" value="${c.x}"></div><div><label>Nudge Y (mm)</label><input id="ny" value="${c.y}"></div><div><label>Helper URL</label><input id="pu" value="${(S.cfg.prn||{}).url||'http://localhost:9101'}"></div><div><label>Gap (mm)</label><input id="pg" value="${(S.cfg.prn||{}).gap??3}"></div><div><label>Direction (0/1)</label><input id="pd" value="${(S.cfg.prn||{}).dir??1}"></div><div><label>Font</label><input id="pf" value="${(S.cfg.prn||{}).font||'Cambria'}"></div><div><label>Text size (dots)</label><input id="pz" value="${(S.cfg.prn||{}).px||19}"></div><div><label>Invert bitmap (0/1)</label><input id="pi" value="${(S.cfg.prn||{}).inv||0}"></div><div><label>Shift up/down (dots)</label><input id="psh" value="${(S.cfg.prn||{}).sh??14}"></div><div><label>Darkness (0-15)</label><input id="pk" value="${(S.cfg.prn||{}).den??8}"></div><div><label>Speed (1-5)</label><input id="ps" value="${(S.cfg.prn||{}).spd??3}"></div></div><div class="bar"><button class="p" onclick="saveN()">Save</button><button onclick="pingHelper()">Check helper</button><button onclick="rulerPrint()">Ruler test</button><button onclick="verifyLayout()">Verify layout</button><button onclick="printTags([{cat:CATS[0],tagNo:'GRG1',gw:1,nw:1,size:'10',stamp:'18K',name:'TEST'}])">Test print</button></div><div class="card"><b>Backup</b><div class="bar"><button onclick="exportDB()">Export backup</button><input type="file" id="jf" accept=".json" style="width:auto"><button onclick="importDB()">Restore</button></div></div><div class="card"><b>Import product_data.xlsx</b><br><input type="file" id="xf" accept=".xlsx"><div class="bar"><button class="p" onclick="imp()">Import</button><span id="ist"></span></div></div><div class="card" style="border-color:#e4b7b3"><b style="color:var(--red)">Delete all stock</b><p class="mut" style="margin:4px 0 8px">Removes every tag from stock so you can enter or import them again. A full backup file downloads first. Items, stamps, designs, layout, settings and next-number counters are kept.</p><button class="d" onclick="delAllStock()">Delete all stock…</button></div>`}
  const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making presets'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import']};
- if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}</div>`;return}
+ if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}<div class="tile" tabindex="0" role="button" onclick="refreshApp()" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">🔄</span><span><b>Refresh</b><small>Reload the app to get the latest version and data</small></span></div></div>`;return}
  a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv()}
 window.CATS=CATS;window.printTags=printTags;window.rm=async(p,key)=>{if(confirm('Remove?'))await set(R(p+'/'+key),null)};
 window.addS=()=>{const v=$('#sn').value.trim(),c=[...document.querySelectorAll('.sck:checked')].map(x=>x.value);if(!v||!c.length)return alert('Enter a stamp name and tick at least one category');const o=S.stamps[k(v)],m=[...new Set([...(o?stC(o):[]),...c])];set(R('stamps/'+k(v)),{name:o?o.name:v,cats:m})};
