@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Suhag Tag Generator</title>
 <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2a2118"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Tag Generator"><link rel="icon" type="image/png" sizes="32x32" href="tag-favicon-32.png"><link rel="apple-touch-icon" href="tag-apple-touch-icon.png">
 <style>
@@ -132,7 +132,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:760px){.rr{grid-template-columns:1fr 1fr}.rr button{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 body.off header::after{content:"OFFLINE - nothing saves";color:#fff;background:#c00;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.ro header::after{content:"READ ONLY - not the official page";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.old header::after{content:"OLD COPY - read only";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}
-/* ===== iOS installed web app: solid strip behind the translucent status bar (same fix as the POS) =====
+/* ===== iOS installed web app (same setup as the POS): NO viewport-fit=cover, so iOS keeps the page below the translucent status bar and paints the html background behind it — keep html dark. The strip below only matters if cover is ever turned on again. =====
    Without it the system blur fades over the light page colour. env() is 0 on desktop, so desktop is unaffected. */
 html{background-color:#2a2118}
 body{min-height:100vh;min-height:100dvh;background:var(--bg)}
