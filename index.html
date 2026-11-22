@@ -159,6 +159,23 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .ef{display:none}
 .ecb{display:block;width:100%;margin:8px 0;font-weight:600}
 }
+/* ===== TEMP item sheet ===== */
+.qs-tb{position:sticky;top:var(--hh,52px);z-index:6;margin:8px 0;padding:10px 12px}
+.qs-tb .bar{margin:0 0 8px}.qs-tb .bar>*{flex:0 1 auto}.qs-tb input[type=text],.qs-tb input:not([type]){min-width:150px}
+.qsw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:var(--sh);margin:8px 0}
+.qsr{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(130px,1.1fr) 64px minmax(240px,3fr) 92px;gap:8px;align-items:start;padding:8px 10px;border-bottom:1px solid #efe6d0}
+.qsr:last-child{border-bottom:0}
+.qsh{background:#f3ead3;color:#5a4a2c;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:calc(var(--hh,52px) + 96px);z-index:4;align-items:center}
+.qsr.ch:not(.qsh){background:#fffaf0;box-shadow:inset 4px 0 0 var(--gold2)}
+.qsr.bad input[data-f=ru]{border-color:var(--red);background:#fdeeed}
+.qsn{display:flex;gap:6px;align-items:center;min-height:36px;flex-wrap:wrap}.qsn b{font-weight:600}.qsn small{color:var(--mut)}
+.qsp{font-size:11.5px;color:var(--mut);margin-top:3px;min-height:0}.qsp.e{color:var(--red);font-weight:600}
+.qsr button{padding:6px 8px;font-size:12px;min-height:0}
+.qsl{display:none;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--mut);margin-bottom:3px}
+.qshelp{margin:6px 0}.qshelp code{background:var(--soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
+.qshelp table{width:auto;margin:6px 0}.qshelp td{padding:3px 12px 3px 0;border:0;background:none!important}
+@media(max-width:860px){.qsh{display:none}.qs-tb{position:static}
+ .qsr{grid-template-columns:1fr 84px;gap:8px 10px}.qsr>.qsn,.qsr>.qsrc,.qsr>.qsb{grid-column:1/-1}.qsl{display:block}}
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="go('home')" onkeydown="if(event.key=='Enter')go('home')">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
@@ -339,8 +356,8 @@ function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='stamp')return Object.values(S.stamps).filter(s=>stC(s).includes(c)).map(s=>s.name);
  if(f=='supplier')return suppNames();
  if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
-function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
- else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else entry(a)}
+function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['qsheet','🧾','Item Sheet (temporary)','Fill print name, letter &amp; making rules for all items'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
+ else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='qsheet')qsheet(a);else if(view=='reprint')reprint(a);else entry(a)}
 function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Auto/Bulk is opened a NEW voucher starts (number is only used once a tag is saved) */
  const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
  const fh=([f,l,t])=>{const emp=!SHE&&!!editing,ae=document.activeElement,fo=ae&&ae.dataset&&ae.dataset.f==f; /* editing a tag: empty cells get class "ef" (hidden on mobile until "Empty cells" is pressed) */
@@ -656,6 +673,55 @@ const u=((S.cfg||{}).prn||{}).url||'http://localhost:9101',c=new AbortController
  try{const j=await(await fetch(u+'/ping',{signal:c.signal,cache:'no-store'})).json();e.className='hs on';e.lastChild.textContent='Printer ready';if(manual)toast('✓ Print helper OK — '+j.printer)}
  catch(x){e.className='hs off';e.lastChild.textContent='Printer offline';if(manual)toast('Print helper not reachable — start it on the main PC',1)}finally{clearTimeout(t)}};
 setTimeout(hsCheck,600);setInterval(hsCheck,20000);
+
+/* ===== TEMP ITEM SHEET: print name, letter and making rules for all items =====
+   To remove it later: delete this block, the 'qsheet' tile in render() and the .qs CSS block. */
+const QS={d:(()=>{try{return JSON.parse(lsg('tg_qs')||'{}')||{}}catch(e){return{}}})(),cat:'',q:'',nor:false,list:[],vis:[]};
+const QSM={'':'sp','%':'sp','w':'sw','wt':'swt','g':'swt','/g':'swt','rs':'srs','₹':'srs'},QSU={sp:'%',sw:'w',swt:'/g',srs:'rs'},QSN={sp:'S/%',sw:'S/wstg',swt:'S/wt',srs:'S/Rs'};
+function qsT2R(t){const rules=[],err=[];String(t||'').split(/[;\n]+/).map(s=>s.trim()).filter(Boolean).forEach(s=>{
+ const m=s.match(/^(\d*\.?\d+)\s*(?:(?:-|–|to)\s*(\d*\.?\d+)?|(\+))(?:\s+|\s*[:=@]\s*)(\d*\.?\d+)\s*(%|wt|w|\/g|g|rs|₹)?$/i);
+ if(!m||(m[2]&&n(m[1])>n(m[2]))){err.push(s);return}
+ rules.push({min:m[1],max:m[2]||'9999',type:QSM[(m[5]||'').toLowerCase()],val:m[4]})});return{rules,err}}
+function qsR2T(rs){return(rs||[]).map(r=>{const mn=String(r.min??'').trim()||'0',mx=String(r.max??'').trim();return((!mx||n(mx)>=9999)?mn+'+':mn+'-'+mx)+' '+String(r.val??'').trim()+(QSU[r.type]||'%')}).join('; ')}
+const qsNorm=t=>{const p=qsT2R(t);return p.err.length?String(t||'').trim():qsR2T(p.rules)};
+const qsV=(r,f)=>{const d=QS.d[r.key];if(d&&d[f]!==undefined)return d[f];return f=='pn'?(r.it.printName??''):f=='lt'?(r.it.letter??''):qsR2T(r.it.rules)};
+const qsCh=r=>{const d=QS.d[r.key];if(!d)return false;return(d.pn!==undefined&&d.pn.trim()!==String(r.it.printName||'').trim())||(d.lt!==undefined&&d.lt.trim()!==String(r.it.letter||'').trim())||(d.ru!==undefined&&qsNorm(d.ru)!==qsR2T(r.it.rules))};
+const qsN=()=>QS.list.filter(qsCh).length;
+const qsLS=()=>lss('tg_qs',Object.keys(QS.d).length?JSON.stringify(QS.d):'');
+function qsPv(r){const p=qsT2R(qsV(r,'ru'));return p.err.length?['e','Cannot read: '+p.err.join(' | ')+'  —  write like 0-5 12%']:['',p.rules.map(x=>x.min+'–'+(n(x.max)>=9999?'∞':x.max)+' g → '+QSN[x.type]+' '+x.val).join('   ·   ')]}
+function qsRow(r,i){const[pc,pt]=qsPv(r),bad=pc=='e';
+ return`<div class="qsr${qsCh(r)?' ch':''}${bad?' bad':''}" data-i="${i}"><div class="qsn">${cbg(r.it.cat)}<b>${hx(r.it.name)}</b><small>${hx(r.it.prefix||'')}</small></div>
+<div><span class="qsl">Print name</span><input data-f="pn" placeholder="${hx(r.it.name)}" value="${hx(qsV(r,'pn'))}" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off"></div>
+<div><span class="qsl">Letter</span><input data-f="lt" value="${hx(qsV(r,'lt'))}" maxlength="3" style="text-align:center;font-weight:700" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off"></div>
+<div class="qsrc"><span class="qsl">Making rules (sale, by net weight)</span><input data-f="ru" placeholder="0-5 12%; 5-10 10%; 10+ 8%" value="${hx(qsV(r,'ru'))}" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="qsp ${pc}">${hx(pt)}</div></div>
+<div class="qsb"><button title="Copy these rules to every item in this category" onclick="qsCopy(${i})">⧉ Copy to all ${hx(CSH[CATS.indexOf(r.it.cat)]||'')}</button></div></div>`}
+function qsRows(){const q=QS.q.trim().toLowerCase();
+ QS.vis=QS.list.map((r,i)=>i).filter(i=>{const r=QS.list[i];return(!QS.cat||r.it.cat==QS.cat)&&(!q||(r.it.name+' '+(r.it.printName||'')+' '+(r.it.prefix||'')).toLowerCase().includes(q))&&(!QS.nor||!qsV(r,'ru').trim())});
+ $('#qsrows').innerHTML=QS.vis.length?`<div class="qsr qsh"><div>Item</div><div>Print name</div><div>Letter</div><div>Making rules (sale, by net weight)</div><div></div></div>`+QS.vis.map(i=>qsRow(QS.list[i],i)).join(''):'<p class="mut" style="padding:14px;margin:0">No items match.</p>';qsSt()}
+function qsSt(){const c=qsN(),e=$('#qsst'),b=$('#qssv'),x=$('#qsdc');if(!e)return;const nr=QS.list.filter(r=>!qsV(r,'ru').trim()).length;
+ e.textContent=QS.vis.length+' shown of '+QS.list.length+' items · '+nr+' without rules · '+c+' unsaved';b.textContent=c?'Save '+c+' changed item'+(c>1?'s':''):'Nothing to save';b.disabled=!c;x.style.display=c?'':'none'}
+function qsheet(a){const ae=document.activeElement;if(a.querySelector('#qsrows')&&ae&&a.contains(ae)&&/^(INPUT|SELECT)$/.test(ae.tagName))return; /* don't wipe what is being typed when the cloud refreshes */
+ QS.list=Object.entries(S.items||{}).map(([key,it])=>({key,it})).sort((x,y)=>CATS.indexOf(x.it.cat)-CATS.indexOf(y.it.cat)||String(x.it.name).localeCompare(String(y.it.name),undefined,{numeric:true}));
+ a.innerHTML=`<h3>Item Sheet <span class="pill">temporary</span></h3><p class="sub">Type the print name, letter and making rules for every item, then press Save. Enter / ↓ / ↑ jumps to the same box in the next / previous item. Unsaved typing is kept on this device.</p>
+ <details class="qshelp"><summary>How to write making rules</summary><p class="mut" style="margin:4px 0">One rule = <code>from-to  value+unit</code> (weights in grams of <b>net weight</b>). Separate several rules with <code>;</code></p>
+ <table><tr><td><code>0-5 12%</code></td><td>0 to 5 g → S/% 12</td></tr><tr><td><code>5-10 8w</code></td><td>5 to 10 g → S/wstg 8</td></tr><tr><td><code>10-20 150/g</code></td><td>10 to 20 g → S/wt 150 (₹ per gram)</td></tr><tr><td><code>20+ 500rs</code></td><td>20 g and above → S/Rs 500 (₹ per piece)</td></tr></table>
+ <p class="mut" style="margin:4px 0">No unit = %. Whole line example: <code>0-5 12%; 5-10 10%; 10+ 8%</code>. These fill the sale making automatically when a tag's net weight falls in the range.</p></details>
+ <div class="card qs-tb"><div class="bar"><input placeholder="Search item…" value="${hx(QS.q)}" oninput="QS.q=this.value;qsRows()" style="flex:1 1 170px"><select onchange="QS.cat=this.value;qsRows()" style="width:auto"><option value="">All categories</option>${CATS.map(c=>`<option ${c==QS.cat?'selected':''}>${c}</option>`).join('')}</select><label style="display:inline-flex;gap:6px;align-items:center;font-size:13px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink);margin:0"><input type="checkbox" ${QS.nor?'checked':''} onchange="QS.nor=this.checked;qsRows()"> Only items without rules</label></div>
+ <div class="bar"><input id="qsb" placeholder="Same rules for all shown items, e.g. 0-5 12%; 5-10 10%; 10+ 8%" style="flex:1 1 260px" onkeydown="if(event.key=='Enter')qsApply()"><button onclick="qsApply()">Apply to shown items</button></div>
+ <div class="bar" style="margin:0"><span class="mut" id="qsst" style="flex:1 1 200px"></span><button class="d" id="qsdc" onclick="qsDiscard()">Discard changes</button><button class="p" id="qssv" onclick="qsSave()">Save</button></div></div>
+ <div class="qsw" id="qsrows"></div>`;qsRows()}
+window.qsIn=el=>{const row=el.closest('.qsr'),r=QS.list[+row.dataset.i];(QS.d[r.key]=QS.d[r.key]||{})[el.dataset.f]=el.value;const[pc,pt]=qsPv(r);row.classList.toggle('ch',qsCh(r));row.classList.toggle('bad',pc=='e');const p=row.querySelector('.qsp');p.className='qsp '+pc;p.textContent=pt;qsLS();qsSt()};
+window.qsKey=ev=>{const key=ev.key;if(key!='Enter'&&key!='ArrowDown'&&key!='ArrowUp')return;ev.preventDefault();const el=ev.target,rows=[...document.querySelectorAll('#qsrows .qsr:not(.qsh)')],j=rows.indexOf(el.closest('.qsr'))+(key=='ArrowUp'?-1:1),t=rows[j]&&rows[j].querySelector('[data-f="'+el.dataset.f+'"]');if(t){t.focus();t.select()}};
+window.qsApply=()=>{const t=$('#qsb').value.trim();if(!t)return;const p=qsT2R(t);if(p.err.length||!p.rules.length)return alert('Cannot read: '+(p.err.join(' | ')||t)+'\n\nExample: 0-5 12%; 5-10 10%; 10+ 8%');if(!QS.vis.length)return;
+ if(!confirm('Put these rules on all '+QS.vis.length+' shown items?\nTheir current (unsaved) rules will be replaced.'))return;const tx=qsR2T(p.rules);QS.vis.forEach(i=>{const r=QS.list[i];(QS.d[r.key]=QS.d[r.key]||{}).ru=tx});qsLS();qsRows();toast('Rules applied — press Save to keep them')};
+window.qsCopy=i=>{const r=QS.list[i],t=qsV(r,'ru'),p=qsT2R(t);if(p.err.length)return alert('Fix this item\'s rules first: '+p.err.join(' | '));if(!p.rules.length)return alert('This item has no rules to copy');
+ const same=QS.list.filter(x=>x.it.cat==r.it.cat&&x.key!=r.key);if(!same.length)return;if(!confirm('Copy these rules to the other '+same.length+' items in '+r.it.cat+'?\nTheir current (unsaved) rules will be replaced.'))return;const tx=qsR2T(p.rules);same.forEach(x=>{(QS.d[x.key]=QS.d[x.key]||{}).ru=tx});qsLS();qsRows();toast('Copied — press Save to keep them')};
+window.qsDiscard=()=>{if(!confirm('Discard all '+qsN()+' unsaved changes?'))return;QS.d={};qsLS();qsRows()};
+window.qsSave=async()=>{const bad=[],ch=QS.list.filter(qsCh);ch.forEach(r=>{if(qsT2R(qsV(r,'ru')).err.length)bad.push(r.it.name)});
+ if(bad.length)return alert('Fix the making rules (red boxes) on these items first:\n\n'+bad.join(', '));if(!ch.length)return;
+ const up={};ch.forEach(r=>{const b='items/'+r.key+'/';up[b+'printName']=qsV(r,'pn').trim()||r.it.name;up[b+'letter']=qsV(r,'lt').trim();const p=qsT2R(qsV(r,'ru'));up[b+'rules']=p.rules.length?p.rules:null});
+ const ks=Object.keys(up);try{for(let i=0;i<ks.length;i+=300){const o={};ks.slice(i,i+300).forEach(x=>o[x]=up[x]);await update(R(''),o)}}catch(e){return alert('Not saved: '+(e.message||e))}
+ QS.d={};qsLS();toast('✓ Saved '+ch.length+' item'+(ch.length>1?'s':''));const a=$('#app');if(a)qsRows()};
 
 /* ===== back navigation (phone Back button + header Back) ===== */
 (()=>{const H=[];let ign=0;
