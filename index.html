@@ -149,6 +149,16 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .fbtog.on>span:first-child::after{content:" \2022 active";color:var(--gold);font-weight:700}
 .fbar.cl{display:none}
 }
+
+/* desktop: wrapper is transparent so the tiles keep their grid; toggle buttons are mobile-only */
+.stx{display:contents}.stg,.ecb{display:none}
+@media(max-width:760px){
+.dx{display:none!important}
+.stats{grid-template-columns:1fr}.stx{display:none}.stats.open .stx{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stg{display:block;margin:8px 0 0;padding:6px 12px;font-size:12.5px;background:transparent;color:#f3d98b;border:1px solid #6b5428}
+.ef{display:none}
+.ecb{display:block;width:100%;margin:8px 0;font-weight:600}
+}
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="go('home')" onkeydown="if(event.key=='Enter')go('home')">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
@@ -225,6 +235,7 @@ function suppSeed(){if(SSEED||(S.cfg||{}).suppSeeded||!CONN||!ORIGIN_OK||!WRITE_
  const ex=S.suppliers||{},b={};
  Object.values(S.tags||{}).forEach(g=>{const nm=String(g.supplier||'').trim().replace(/\s+/g,' ');if(!nm)return;const q=supKey(nm);if(!ex[q]&&!b['suppliers/'+q])b['suppliers/'+q]={name:nm}});
  b['cfg/suppSeeded']=1;update(R(''),b).catch(()=>{SSEED=0})}
+let SHE=false,SHS=false; /* mobile only: SHE = show empty cells of an opened tag, SHS = show Gold/Silver/925 stat tiles */
 let SUE=null; /* key of the supplier being edited (name stays fixed: tags refer to suppliers by name) */
 const supMob=v=>String(v||'').replace(/[^\d+\-() ]/g,'').replace(/\s+/g,' ').trim();
 window.addSup=async()=>{const g=i=>{const e=$(i);return e?e.value:''},nm=g('#spn').trim().replace(/\s+/g,' '),mob=supMob(g('#spm')),adr=g('#spa').trim().replace(/[ \t]+/g,' ');
@@ -302,7 +313,7 @@ const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CS
 let S={stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
 let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
 
-window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;vou=null;F={cat:CATS[0]};editing=null}render()};
+window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;SHE=false;vou=null;F={cat:CATS[0]};editing=null}render()};
 const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
 const vous=()=>[...new Set([...live().map(t=>+t.vou),...Object.keys(S.cfg.vous||{}).map(Number)])].filter(Boolean).sort((a,b)=>a-b);
 const maxVou=()=>Math.max(0,...Object.values(S.tags).map(t=>+t.vou||0),...Object.keys(S.cfg.vous||{}).map(Number));
@@ -320,10 +331,11 @@ function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
 function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
  else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else entry(a)}
-function entry(a){const vl=vous();if(vou==null)vou=vl.length?vl[vl.length-1]:maxVou()+1;
+function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Auto/Bulk is opened a NEW voucher starts (number is only used once a tag is saved) */
  const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
- const fh=([f,l,t])=>{if(MGS.includes(f))return MGK[f]?mgHtml(MGK[f],'F'):'';const o=t=='sel'?opts(f):null;const v=F[f]??'';if(o&&f=='supplier'&&v&&!o.includes(v))o.push(v);
- return`<div><label>${l}</label>${o?`<select data-f="${f}">${f=='cat'?'':'<option value="">'+(o.length?'':'— none: add in Setting —')+'</option>'}${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-f="${f}" value="${v}" ${f=='nw'?'readonly':''} oninput="sv('${f}',this.value,1)">`}</div>`};
+ const fh=([f,l,t])=>{const emp=!SHE&&!!editing,ae=document.activeElement,fo=ae&&ae.dataset&&ae.dataset.f==f; /* editing a tag: empty cells get class "ef" (hidden on mobile until "Empty cells" is pressed) */
+ if(MGS.includes(f)){if(!MGK[f])return'';const h=mgHtml(MGK[f],'F');return emp&&MG[MGK[f]].f.every(x=>!String(F[x]??'').trim())?h.replace('<div id="mg-','<div class="ef" id="mg-'):h}const o=t=='sel'?opts(f):null;const v=F[f]??'';if(o&&f=='supplier'&&v&&!o.includes(v))o.push(v);
+ return`<div${emp&&!fo&&!String(v).trim()?' class="ef"':''}><label>${l}</label>${o?`<select data-f="${f}">${f=='cat'?'':'<option value="">'+(o.length?'':'— none: add in Setting —')+'</option>'}${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-f="${f}" value="${v}" ${f=='nw'?'readonly':''} oninput="sv('${f}',this.value,1)">`}</div>`};
  if(!editing&&!n(F.pcs))F.pcs='1';
  const fl=l=>l.map(f=>fh(FIELDS.find(x=>x[0]==f))).join('');
  const inp1=fl(['cat','item','supplier']),inp=fl(['pcs','stamp','tunch','pw','lab','sw','mrp','prate','srate']);
@@ -332,19 +344,21 @@ function entry(a){const vl=vous();if(vou==null)vou=vl.length?vl[vl.length-1]:max
  const fq=f=>fh(FIELDS.find(x=>x[0]==f));
  const qb=`<div class="card qk"><div class="q-next">${editing?'Editing tag':'Next tag'}: <b>${hx(editing||peekNo((S.items[k(F.item||'')]||{}).prefix)||'—')}</b></div><div class="qg"><div class="q-huid"><label>${ql('huid')}</label><input data-f="huid" id="qhuid" autocapitalize="characters" enterkeyhint="next" autocomplete="off" value="${hx(F.huid??'')}" oninput="qIn('huid',this)" onkeydown="qKey(event,'huid')" onfocus="this.select()"></div><div class="q-less"><label>${ql('less')}</label><input data-f="less" id="qless" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${hx(F.less??'')}" oninput="qIn('less',this)" onfocus="this.select()"></div><div class="q-gw"><label>${ql('gw')} <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:400">— Enter ${editing?'updates':mode=='auto'?'prints':'adds'}</span></label><input data-f="gw" id="qgw" placeholder="0.000" inputmode="decimal" enterkeyhint="go" autocomplete="off" value="${hx(F.gw??'')}" oninput="qIn('gw',this)" onkeydown="qKey(event,'gw')" onfocus="this.select()"></div><div class="q-size">${fq('size')}</div><div class="q-des">${fq('design')}</div><div class="q-nw"><label>${ql('nw')}</label><input data-f="nw" readonly tabindex="-1" value="${hx(F.nw??'')}"></div><div class="q-btn"><button class="p" onclick="gen()">${editing?'Update + Reprint':mode=='auto'?'Generate + Print':'Add'}</button>${mode=='bulk'?'<button onclick="printAll()">Print all</button>':''}</div></div></div>`;
  a.innerHTML=`<h3>${mode=='auto'?'Auto Print':'Bulk Print'} — Voucher ${vou}</h3><div class="card"><div class="sh">Item</div><div class="grid">${inp1}</div></div>
+ ${editing&&((inp1+inp+qb).split('class="ef"').length-1||SHE)?`<button class="ecb" onclick="togE()">${SHE?'Hide empty cells':'Empty cells ('+((inp1+inp+qb).split('class="ef"').length-1)+')'}</button>`:''}
  <div class="card dc"><div class="sh">Stamp, making &amp; rates</div><div class="grid">${inp}</div>
 </div>
  ${qb}
  <div class="card"><div class="bar"><b>Voucher</b><button onclick="nv(-1)">◀</button><b>${vou}</b><button onclick="nv(1)">▶</button><button onclick="vou=maxVou()+1;render()">+ New</button><span>${vt.length?vt.length+' tags':'Nil'}</span></div>
- <table><tr><th>Tag</th><th>Item</th><th>Gr</th><th>Net</th><th>Stamp</th><th>Size</th><th></th></tr>${vt.map(t=>`<tr class="r" onclick="ed('${t.tagNo}')"><td>${t.tagNo}</td><td>${t.item}</td><td>${t.gw}</td><td>${t.nw}</td><td>${t.stamp||''}</td><td>${t.size||''}</td><td><button class="d" onclick="event.stopPropagation();del('${t.tagNo}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No tags in this voucher yet — fill the boxes, enter Gross wt and press Enter.</td></tr>'}</table></div>
+ <table><tr><th>Tag</th><th>Item</th><th>Gr</th><th>Net</th><th>Stamp</th><th>Size</th><th class="dx"></th></tr>${vt.map(t=>`<tr class="r" onclick="ed('${t.tagNo}')"><td>${t.tagNo}</td><td>${t.item}</td><td>${t.gw}</td><td>${t.nw}</td><td>${t.stamp||''}</td><td>${t.size||''}</td><td class="dx"><button class="d" onclick="event.stopPropagation();del('${t.tagNo}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No tags in this voucher yet — fill the boxes, enter Gross wt and press Enter.</td></tr>'}</table></div>
  <div class="bar"><button onclick="go('home')">Cancel</button></div>`;
  if(FG){const g=$('#'+FG);FG=false;if(g)g.focus()}else if(af){const e=a.querySelector('[data-f="'+af+'"]');if(e&&e.focus){e.focus();try{if(e.setSelectionRange&&e.type!='number')e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}}
 window.sv=(f,v,q)=>{if(f=='gw'||f=='less'){v=String(v).replace(/[^0-9.]/g,'').replace(/^(\d*\.\d*)\./,'$1');v=v.replace(/(\.\d{3})\d+/,'$1')}F[f]=v;if(f=='cat'){F.item=F.stamp=F.design=''}if(f=='item'){const it=S.items[k(v)];if(it)F.design='';preset()}
  if(f=='gw'||f=='less'){F.nw=Math.max(0,n(F.gw)-n(F.less)).toFixed(3);preset()}
  if(!q)render();else if(f=='gw'||f=='less'){const i=[...document.querySelectorAll('.grid input')];FIELDS.forEach(([ff],ix)=>{});document.querySelectorAll('input[data-f]').forEach(e=>e.value=F[e.dataset.f]??'');mgSync()}};
 function preset(){if(editing)return;const it=S.items[k(F.item||'')];if(!it||!it.rules)return;const w=n(F.nw);if(!w)return;const r=it.rules.find(r=>w>=n(r.min)&&w<=n(r.max));if(r){['sw','sp','swt','srs'].forEach(x=>F[x]='');F[r.type]=r.val}}
-window.nv=d=>{const l=vous();const i=l.indexOf(vou);const j=i+d;if(l[j]!=null)vou=l[j];render()};
-window.ed=t=>{editing=t;F={...S.tags[t]};render()};
+window.nv=d=>{const l=vous();const i=l.indexOf(vou);const j=i<0?(d<0?l.length-1:-1):i+d;if(l[j]!=null)vou=l[j];render()};
+window.ed=t=>{editing=t;SHE=false;F={...S.tags[t]};render()};
+window.togE=()=>{SHE=!SHE;render()};
 window.del=async t=>{if(!confirm('Delete tag '+t+'? Its number stays blocked.'))return;await update(R('tags/'+t),{status:'archived'});if(editing==t){editing=null;F={cat:CATS[0]}}};
 function peekNo(pre){if(!pre)return'';let i=(+(S.counters||{})[k(pre)]||0)+1;while(S.tags[pre+i])i++;return pre+i}
 async function nextNo(pre){for(let i=0;i<5000;i++){const r=await runTransaction(R('counters/'+k(pre)),c=>(c||0)+1);const no=pre+r.snapshot.val();if(!S.tags[no])return no}throw new Error('No free number for prefix '+pre)}
@@ -616,7 +630,8 @@ document.addEventListener('keydown',ev=>{if(ev.key!='Enter'||(view!='auto'&&view
 /* ===== UI helpers (v3): toast, category badge, home stats, printer status dot ===== */
 function cbg(c){const i=CATS.indexOf(c);return i<0?hx(c):`<span class="cb c${i}">${CSH[i]}</span>`}
 function homeStats(){const l=live();if(!l.length)return'<p class="sub">No tags yet</p>';const nw=a=>a.reduce((s,t)=>s+n(t.nw),0).toFixed(3);
- return`<div class="stats"><div class="stat tot"><small>All tags in stock</small><b>${l.length}</b><span>${nw(l)} g net</span></div>${CATS.map((c,i)=>{const x=l.filter(t=>t.cat==c);return x.length?`<div class="stat"><small>${CSH[i]}</small><b>${x.length}</b><span>${nw(x)} g net</span></div>`:''}).join('')}</div>`}
+ return`<div class="stats${SHS?' open':''}"><div class="stat tot"><small>All tags in stock</small><b>${l.length}</b><span>${nw(l)} g net</span><button class="stg" onclick="togS()">${SHS?'Hide':'Gold / Silver / 925'} ${SHS?'▴':'▾'}</button></div><div class="stx">${CATS.map((c,i)=>{const x=l.filter(t=>t.cat==c);return x.length?`<div class="stat"><small>${CSH[i]}</small><b>${x.length}</b><span>${nw(x)} g net</span></div>`:''}).join('')}</div></div>`}
+window.togS=()=>{SHS=!SHS;render()};
 let TT=0;function toast(m,bad){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';document.body.appendChild(e)}e.textContent=m;e.className=(bad?'bad ':'')+'on';clearTimeout(TT);TT=setTimeout(()=>e.classList.remove('on'),2200)}
 window.hsCheck=async(manual)=>{const e=document.getElementById('hs');if(!e)return;
  if(lsg('tg_rm')=='1'){const on=PSS&&SNOW()-(+PSS.ts||0)<PS_ONLINE,ok=on&&PSS.ok;e.className='hs '+(ok?'on':'off');e.lastChild.textContent=!on?'Main PC offline':ok?'Main PC ready':'PC printer off';if(manual)toast(!on?'Main PC is offline — open the Tag Generator there and turn Print server ON':ok?'✓ Main PC ready'+(PSS.printer?' — '+PSS.printer:''):'Main PC is on, but its print helper / printer is not responding',!ok);return}
