@@ -307,7 +307,17 @@ window.delAllStock=async()=>{const ks=Object.keys(S.tags||{}).filter(x=>S.tags[x
  exportDB();await new Promise(r=>setTimeout(r,800));
  for(let i=0;i<ks.length;i+=1000)await update(R(''),Object.fromEntries(ks.slice(i,i+1000).map(x=>['tags/'+x,null])));
  editing=null;toast('✓ '+ks.length+' tags deleted');render()};
-window.importDB=async()=>{const f=$('#jf').files[0];if(!f||!confirm('Replace ALL data with this backup?\n\nA backup of the current data downloads first.'))return;const j=JSON.parse(await f.text());exportDB();await new Promise(r=>setTimeout(r,800));await set(R('tags'),null);await cloudRestore(j.tagsoft||j);toast('Backup restored')};
+window.importDB=async()=>{const f=$('#jf').files[0];if(!f)return;
+ let j,D;try{j=JSON.parse(await f.text());D=j&&(j.tagsoft||j)}catch(e){return alert('This file is not a valid backup (it could not be read). Nothing was changed.')}
+ /* the file must really be a tag generator backup: tags must be an object whose entries look like tags (not e.g. a POS backup) */
+ const tg=D&&typeof D=='object'?D.tags:null,tv=tg&&typeof tg=='object'&&!Array.isArray(tg)?Object.values(tg):null;
+ if(!tv||tv.some(x=>!x||typeof x!='object'||!x.tagNo||!x.cat)||['jewelryData','billHistory','invoiceHistory','ledgerEntries'].some(x=>D[x]!==undefined))return alert('This is not a Tag Generator backup file, so nothing was changed.\n\n(It must be a file named tagsoft_backup_....json made from this app.)');
+ if(!confirm('Replace ALL data with this backup?\n\nThe backup holds '+tv.length+' tags. Tags that are in the cloud but NOT in the backup will be removed.\n\nA backup of the current data downloads first.'))return;
+ try{const cur=Object.keys(S.tags||{});exportDB();await new Promise(r=>setTimeout(r,800));
+  await cloudRestore(D); /* restore first ... */
+  const gone=cur.filter(x=>!(x in D.tags)); /* ... and only afterwards remove tags the backup does not have, so a failure half way never leaves you with fewer tags */
+  for(let i=0;i<gone.length;i+=1000)await update(R(''),Object.fromEntries(gone.slice(i,i+1000).map(x=>['tags/'+x,null])));
+  toast('Backup restored')}catch(e){alert('Restore did not finish: '+(e.message||e)+'\n\nNo tag was deleted before the restore succeeded. Check the stock, then try again.')}};
 const $=s=>document.querySelector(s),k=s=>String(s).replace(/[.$#\[\]\/]/g,'_'),n=v=>parseFloat(v)||0;
 const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CSH=['Gold','Silver','925 Silver'];const stC=x=>x.cats||(x.cat?[x.cat]:[]);
 let S={stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
@@ -362,12 +372,19 @@ window.togE=()=>{SHE=!SHE;render()};
 window.del=async t=>{if(!confirm('Delete tag '+t+'? Its number stays blocked.'))return;await update(R('tags/'+t),{status:'archived'});if(editing==t){editing=null;F={cat:CATS[0]}}};
 function peekNo(pre){if(!pre)return'';let i=(+(S.counters||{})[k(pre)]||0)+1;while(S.tags[pre+i])i++;return pre+i}
 async function nextNo(pre){for(let i=0;i<5000;i++){const r=await runTransaction(R('counters/'+k(pre)),c=>(c||0)+1);const no=pre+r.snapshot.val();if(!S.tags[no])return no}throw new Error('No free number for prefix '+pre)}
+let vClaimed=null; /* voucher this device has already claimed in the cloud */
+async function claimVou(){if(vClaimed===vou||vous().includes(vou)){vClaimed=vou;return}
+ const was=vou;let v=vou;
+ for(let i=0;i<100;i++){while(vous().includes(v))v++;const r=await runTransaction(R('cfg/vous/'+v),c=>c?undefined:1);if(r.committed){vou=v;vClaimed=v;if(v!=was)toast('Voucher '+was+' was already taken on another device — using '+v);return}v++}
+ throw new Error('Could not reserve a voucher number')}
 window.gen=async()=>{const it=S.items[k(F.item||'')];if(!it||!F.cat||(!n(F.gw)&&!(n(F.mrp)>0)))return alert('Category, item and gross weight (or MRP) are required');
  if(!n(F.gw)){F.gw='';F.less='';F.nw=''}
  if(F.stamp&&!opts('stamp').includes(F.stamp))F.stamp='';
  if(n(F.mrp)>0)['sw','sp','swt','srs'].forEach(x=>F[x]='');
  if(!n(F.pcs))F.pcs='1';
- let t;if(editing){t={...F};await update(R('tags/'+editing),t)}else{const no=await nextNo(it.prefix);t={...F,tagNo:no,name:it.printName||it.name,letter:it.letter||'',vou,vtype:'TG',ts:Date.now(),status:'live',printed:0};await set(R('tags/'+no),t);await set(R('cfg/vous/'+vou),1)}
+ let t;if(editing){const o=S.tags[editing];if(!o||o.status=='archived'){alert('Tag '+editing+' was deleted on another device, so it was not saved.');editing=null;F={cat:CATS[0]};render();return}
+  const d={};Object.keys(F).forEach(x=>{if(['status','tagNo','ts','vou','vtype','printed'].includes(x))return;if(String(F[x]??'')!==String(o[x]??''))d[x]=F[x]});
+  if(Object.keys(d).length)await update(R('tags/'+editing),d);t={...o,...d,tagNo:editing}}else{await claimVou();const no=await nextNo(it.prefix);t={...F,tagNo:no,name:it.printName||it.name,letter:it.letter||'',vou,vtype:'TG',ts:Date.now(),status:'live',printed:0};await set(R('tags/'+no),t);await set(R('cfg/vous/'+vou),1)}
  if(mode=='auto'||editing){printTags([t]);await update(R('tags/'+t.tagNo),{printed:1})}
  toast('✓ '+t.tagNo+(editing?' updated':mode=='auto'?' created':' added'));const keep={...F};['gw','less','nw','huid'].forEach(x=>keep[x]='');F=editing?{cat:CATS[0]}:keep;editing=null;render()};
 window.printAll=()=>{const l=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived'&&!t.printed);if(!l.length)return alert('Nothing pending');printTags(l);l.forEach(t=>update(R('tags/'+t.tagNo),{printed:1}))};
