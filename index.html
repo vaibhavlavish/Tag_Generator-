@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Suhag Tag Generator</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#2a2118"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Tag Generator"><link rel="icon" type="image/png" sizes="32x32" href="tag-favicon-32.png"><link rel="apple-touch-icon" href="tag-apple-touch-icon.png">
+<style>
+:root{--bg:#f7f3ea;--ink:#2a2118;--mut:#8a7a5c;--gold:#a8751a;--gold2:#c99a3b;--soft:#f3e6c4;--card:#fff;--line:#e6dcc4;--red:#b3362f;--sh:0 1px 2px rgba(60,40,10,.06),0 4px 14px rgba(60,40,10,.07)}
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#2a2118,#40301c);color:#f3d98b;padding:12px 20px;display:flex;gap:10px;align-items:center;border-bottom:2px solid var(--gold2);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+header b{font:600 19px Georgia,serif;flex:1;letter-spacing:.02em}header b::before{content:"◆";color:var(--gold2);margin-right:9px;font-size:13px;vertical-align:2px}
+header button{background:rgba(243,217,139,.12);color:#f3d98b;border-color:rgba(243,217,139,.45)}header button:hover{background:rgba(243,217,139,.25)}
+button{font:inherit;font-weight:500;padding:8px 14px;border:1px solid #d3bd8a;background:#fff;color:var(--ink);border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
+button:hover{border-color:var(--gold);background:#fbf5e4}button:active{transform:translateY(1px)}
+button.p{background:linear-gradient(180deg,#c28c27,#a8751a);color:#fff;border-color:#8f6212;box-shadow:0 1px 2px rgba(80,50,0,.3)}button.p:hover{filter:brightness(1.07);background:linear-gradient(180deg,#c28c27,#a8751a)}
+button.d{border-color:#e4b7b3;color:var(--red);background:#fff}button.d:hover{background:#fdeeed;border-color:var(--red)}
+main{padding:18px 16px 40px;max-width:1200px;margin:auto;line-height:1.45}
+h3{font:600 22px Georgia,serif;margin:6px 0 10px}h4{font:600 16px Georgia,serif;margin:18px 0 8px}
+.sub{color:var(--mut);margin:-4px 0 6px}.mut{color:var(--mut)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-top:14px}
+.tile{display:flex;align-items:center;gap:16px;padding:22px 20px;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--gold2);border-radius:12px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,40,10,.14)}
+.tile b{display:block;font:600 18px Georgia,serif}.tile small{display:block;color:var(--mut);margin-top:3px;font-size:12.5px}
+.ti{flex:none;width:48px;height:48px;border-radius:12px;background:var(--soft);display:grid;place-items:center;font-size:23px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+label{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--mut);margin-bottom:3px;display:block}
+.bar label{text-transform:none;letter-spacing:0;font-size:13px;font-weight:400;color:var(--ink);display:inline-flex;gap:5px;align-items:center;margin:0}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #d9ccae;border-radius:8px;font:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold2);box-shadow:0 0 0 3px rgba(201,154,59,.22)}
+input[readonly]{background:#f6f0e0}input[type=checkbox]{width:auto;padding:0;accent-color:var(--gold)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:var(--sh)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.tabs{gap:6px}.tabs button{border-radius:999px;padding:6px 18px}.tabs button.on{background:var(--ink);color:#f3d98b;border-color:var(--ink)}
+table{width:100%;border-collapse:separate;border-spacing:0;background:#fff}
+td,th{padding:8px 10px;border-bottom:1px solid #efe6d0;text-align:left;font-size:13px}
+th{background:#f3ead3;color:#5a4a2c;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+tr:nth-child(even) td{background:#fcf9f2}tr.r{cursor:pointer}tr.r:hover td{background:#f6ebcb}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tw{border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:calc(100vh - 330px);min-height:120px;background:#fff;box-shadow:var(--sh);margin:8px 0}
+.tw th{position:sticky;top:0;z-index:2;white-space:nowrap}.tw tr.g1 th{height:30px}.tw tr.g2 th{top:30px}
+.tw tr:hover td{background:#f6ebcb}.tw tr:last-child td{border-bottom:0}
+th.s{cursor:pointer;user-select:none}th.s:hover{color:var(--gold)}th.act{color:var(--gold);background:#efe0b6}
+.ar{font-size:10px;color:#c4b48a;margin-left:3px}th.act .ar{color:var(--gold)}
+th.grp{text-align:center;background:var(--soft);color:var(--gold);border-left:1px solid #e2d3a5;border-right:1px solid #e2d3a5}
+.fbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;transition:.2s}
+.fbar>div{flex:0 1 128px;min-width:100px}.fbar>.grow{flex:1 1 200px}.fbar.on{border-color:var(--gold2);background:#fffaf0;box-shadow:0 0 0 3px rgba(201,154,59,.16)}
+.chips{margin:8px 0 2px}.chip{display:inline-block;background:var(--soft);border-radius:999px;padding:4px 14px;margin:0 6px 6px 0;font-size:13px}.chip b{font-weight:700;color:var(--gold)}
+.chip.cat{background:var(--ink);color:#f3d98b;font-weight:600;letter-spacing:.03em;font-size:12px}
+.mo{position:fixed;inset:0;background:rgba(30,20,8,.55);display:grid;place-items:center;z-index:50;padding:12px}.md{background:#fff;border-radius:14px;width:min(780px,100%);max-height:92vh;overflow:auto;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.4);border-top:4px solid var(--gold2)}.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}.mf{position:sticky;bottom:-18px;background:#fff;padding:12px 0 2px;margin-top:14px;border-top:1px solid var(--line)}
+.mgr{display:flex;gap:6px}.mgr select{flex:0 0 44%;width:auto}.mgr input{flex:1;min-width:0}
+.pill{display:inline-block;background:var(--soft);color:var(--gold);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;vertical-align:3px;margin-left:6px}
+#lbl{display:none}@media print{body>*:not(#lbl){display:none!important}#lbl{display:block}
+@page{size:82mm 12mm;margin:0}.L{page-break-after:always}}
+.L{position:relative;width:82mm;height:12mm;overflow:hidden;font:bold 8pt Cambria,Georgia,serif;color:#000}.L div{position:absolute;white-space:nowrap;line-height:1.05}
+.L svg{position:absolute}
+#login{position:fixed;inset:0;background:var(--bg);display:none;place-items:center}#login div{background:var(--card);padding:20px;border-radius:10px;width:290px}
+.lygrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}@media(min-width:1500px){.lygrid{grid-template-columns:repeat(4,1fr)}}.lysec{border:1px solid #cbb;border-radius:6px;padding:8px;margin:8px 0}.lyt{width:100%}.lyt input,.lyt select{width:100%;padding:2px}.lyt th{font-size:11px;text-align:left}details summary{cursor:pointer;color:#666;margin:4px 0}
+.lysec{border-color:#e0d3b3;border-radius:10px;background:#fffdf8}.lyt td,.lyt th{padding:3px 4px}.lyt th{text-transform:none;background:none;letter-spacing:0}
+details summary{font-weight:600}
+@media(max-width:640px){main{padding:12px 10px 30px}.tile{padding:16px 14px}header{padding:10px 12px}.tw{max-height:calc(100vh - 260px)}}
+
+/* ===== MOBILE (phones) — desktop layout untouched ===== */
+html{-webkit-text-size-adjust:100%}
+@media(max-width:760px){
+body{font-size:15px;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:20;padding:10px 12px;padding-top:max(10px,env(safe-area-inset-top))}
+header b{font-size:17px}
+button{min-height:44px;padding:10px 14px}
+input,select,textarea{font-size:16px;padding:10px 11px;min-height:44px}
+input[type=checkbox]{min-height:0;width:20px;height:20px}
+main{padding:12px 10px calc(30px + env(safe-area-inset-bottom))}
+h3{font-size:20px}
+.tiles{grid-template-columns:1fr;gap:10px}
+.tile{padding:16px 14px}
+.grid{grid-template-columns:1fr 1fr;gap:10px}
+.card{padding:12px;margin:10px 0}
+.card>.bar:last-child{position:sticky;bottom:0;background:var(--card);padding:10px 0 4px;margin:6px 0 0;border-top:1px solid var(--line);z-index:5}
+.card>.bar:last-child button.p{flex:1 1 100%;font-size:16px;min-height:50px}
+.card>.bar:last-child button{flex:1}
+.card table,.lyt{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+.card td,.card th{padding:10px 8px}
+.card tr.r button.d{min-height:36px;padding:6px 10px}
+.tw{max-height:calc(100dvh - 230px)}
+.tw td,.tw th{padding:10px 8px}
+.fbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.fbar>div,.fbar>.grow{flex:none;min-width:0}
+.fbar>.grow{grid-column:1/-1}
+.tabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+.tabs button{flex:none;padding:8px 16px}
+.mo{padding:0;place-items:end stretch}
+.md{width:100%;max-height:100dvh;height:100dvh;border-radius:0;padding:14px 12px calc(14px + env(safe-area-inset-bottom))}
+.md .grid{grid-template-columns:1fr 1fr}
+.mf{bottom:-14px;display:flex;flex-wrap:wrap;gap:8px}
+.mf button{flex:1 1 40%}
+.mgr select{flex:0 0 46%}
+.lygrid{grid-template-columns:1fr}
+#lyp{max-width:100%}
+.grid>*,.bar>*{min-width:0}.bar input[type=file]{width:100%;font-size:13px;min-height:0}
+.chip{font-size:12.5px;padding:4px 11px}
+}
+@media(max-width:380px){.grid,.md .grid,.fbar{grid-template-columns:1fr}.grid>div[style*="span 2"]{grid-column:auto!important}}
+.qk{background:linear-gradient(135deg,#2a2118,#40301c)!important;border:1px solid var(--gold2);position:sticky;bottom:0;z-index:15;box-shadow:0 -4px 16px rgba(60,40,10,.18);border-color:var(--gold2);background:#fffaf0;padding:10px 12px}
+.qg{display:grid;grid-template-columns:1.3fr .8fr 1.5fr .7fr 1.1fr .9fr auto;gap:10px;align-items:end}.q-btn{display:flex;gap:8px}.q-btn button{white-space:nowrap}.qg select,.qg input{min-width:0}
+@media all{.qk label{color:#e9d9a8}.qk .mut{color:#cdb98a}.qk input[readonly]{background:#3b2d19;color:#f3d98b;border-color:#6b5428}}
+.q-next{color:#cdb98a;font-size:13px;margin:0 0 6px}.q-next b{color:#f3d98b;font:700 17px Georgia,serif;letter-spacing:.03em}
+#qgw{font:700 22px Georgia,serif;padding:8px 12px}.q-nw input{font-weight:700}
+@media(max-width:760px){.qk{bottom:0;margin-bottom:0;padding-bottom:calc(8px + env(safe-area-inset-bottom))}.dc>.bar:last-child{position:static;border:0;padding:0;margin:10px 0 0}.dc>.bar:last-child button.p{flex:1 1 100%}.qg{grid-template-columns:repeat(6,1fr);gap:8px}.q-huid,.q-less,.q-size{grid-column:span 2;order:1}.q-des,.q-btn{grid-column:span 3;order:2}.q-btn button{flex:1;min-height:44px;padding:8px}.q-nw{display:none}.qk{padding:8px 10px}.q-gw{grid-column:1/-1;order:-1}#qgw{font-size:26px;min-height:54px}}
+#bk{display:none}
+@media(max-width:760px){body.sub #bk{display:inline-block;padding:8px 12px}header b::before{display:none}}
+
+/* ===== UI polish (v3) — appearance only ===== */
+button:focus-visible,.tile:focus-visible,tr.r:focus-visible,th.s:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.tile{position:relative}.tile::after{content:"›";position:absolute;right:18px;top:50%;transform:translateY(-52%);font:300 30px Georgia,serif;color:var(--gold2);opacity:.55;transition:transform .15s,opacity .15s}
+.tile:hover::after{transform:translate(4px,-52%);opacity:1}.tile>span:last-child{padding-right:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:6px 0 4px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--sh)}
+.stat small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;color:var(--mut)}
+.stat b{display:block;font:700 26px Georgia,serif;color:var(--gold);line-height:1.2}.stat span{font-size:12.5px;color:var(--mut)}
+.stat.tot{background:linear-gradient(135deg,#2a2118,#40301c);border-color:var(--gold2)}.stat.tot small,.stat.tot span{color:#cdb98a}.stat.tot b{color:#f3d98b}
+.sh{font:600 11px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.09em;color:var(--gold);margin:0 0 10px;display:flex;align-items:center;gap:10px}.sh::after{content:"";flex:1;height:1px;background:var(--line)}
+.empty{color:var(--mut);text-align:center;padding:18px 10px;margin:0}td.empty{padding:22px 10px}
+.cb{display:inline-block;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:600;background:var(--soft);color:var(--gold)}.cb.c1{background:#e9ecef;color:#4b5563}.cb.c2{background:#e3ecf5;color:#2f5d8a}
+.card>table{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:10px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#2a2118;color:#f3d98b;border:1px solid var(--gold2);padding:10px 20px;border-radius:999px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:90;max-width:92vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}#toast.bad{background:#7a211c;color:#fff;border-color:#e4b7b3}
+.hs{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#cdb98a;padding:5px 11px;border:1px solid rgba(243,217,139,.3);border-radius:999px;cursor:pointer;user-select:none;white-space:nowrap}
+.hs i{width:9px;height:9px;border-radius:50%;background:#8a7a5c;display:inline-block}
+.hs.on i{background:#4cc36b;box-shadow:0 0 0 3px rgba(76,195,107,.25)}.hs.off i{background:#e0584f;box-shadow:0 0 0 3px rgba(224,88,79,.22)}
+.mo{animation:mof .15s ease}.md{animation:mdu .18s ease}@keyframes mof{from{opacity:0}}@keyframes mdu{from{transform:translateY(12px);opacity:0}}
+@media(max-width:760px){#toast{bottom:auto;top:calc(66px + env(safe-area-inset-top));transform:translate(-50%,-14px)}.hs span{display:none}.hs{padding:8px}.tile::after{right:12px}.stat{padding:10px 12px}.stat b{font-size:22px}}
+@media(min-width:761px){.grid{grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}}
+.rr{display:grid;grid-template-columns:100px 100px minmax(120px,1fr) 120px auto;gap:10px;align-items:end;border:1px solid var(--line);background:#fffdf8;border-radius:10px;padding:10px;margin:8px 0}.rr>*{min-width:0}
+@media(max-width:760px){.rr{grid-template-columns:1fr 1fr}.rr button{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+body.off header::after{content:"OFFLINE - nothing saves";color:#fff;background:#c00;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.ro header::after{content:"READ ONLY - not the official page";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}body.old header::after{content:"OLD COPY - read only";color:#fff;background:#b60;padding:2px 8px;border-radius:10px;margin-left:8px;font-size:12px}</style></head><body>
+<div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
+<header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b>Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><button onclick="go('home')">Home</button><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
+<main id="app"></main><div id="lbl"></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getDatabase,ref,set,update,remove,onValue,runTransaction} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const app=initializeApp({apiKey:"AIzaSyDaRjbdCnfx5-C4OXQaByZMxK2r0Cu19bI",authDomain:"suhag-f53e4.firebaseapp.com",databaseURL:"https://suhag-f53e4-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"suhag-f53e4",storageBucket:"suhag-f53e4.firebasestorage.app",messagingSenderId:"231258063675",appId:"1:231258063675:web:1c79c2a0d4d5796a6d2d1e"});
+window.FB={db:getDatabase(app),auth:getAuth(app),ref,set,update,remove,onValue,runTransaction,signIn:signInWithEmailAndPassword,onAuth:onAuthStateChanged,signOut};
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* FIREBASE MODE - same Firebase project and email login as the POS. All tag-generator data lives under tagsoft/ */
+const ALLOWED_ORIGIN='https://vaibhavlavish.github.io',ORIGIN_OK=(location.origin===ALLOWED_ORIGIN); /* like the POS: saving is allowed ONLY from the official GitHub Pages address */
+const TG_VER=1; /* bump this number in every release: older copies of the app then become read-only automatically */
+let D={},CONN=false,WRITE_OK=true,UNSUB=null;const P=p=>String(p).split('/').filter(Boolean);
+const lsg=x=>{try{return localStorage.getItem(x)}catch(e){return null}},lss=(x,v)=>{try{localStorage.setItem(x,v)}catch(e){}};
+const ref=(_,p)=>p,db=0,auth=0;const R=p=>p?'tagsoft/'+p:'tagsoft';
+const clean=v=>v==null?null:JSON.parse(JSON.stringify(v));
+const need=()=>{if(!ORIGIN_OK)throw new Error('Saving is disabled. This copy is running from '+location.origin+', not from the official page ('+ALLOWED_ORIGIN+').');if(!window.FB||!FB.auth.currentUser)throw new Error('Not signed in');if(!WRITE_OK)throw new Error('This copy of the app is older than the one already in use. Download the newest tag_generator.html.');if(!CONN)throw new Error('No internet connection. Nothing was saved.')};
+const set=async(p,v)=>{need();const r=FB.ref(FB.db,p);if(v==null)await FB.remove(r);else await FB.set(r,clean(v))};
+const update=async(p,u)=>{need();const o={};for(const[kk,v]of Object.entries(u))o[kk]=clean(v);await FB.update(FB.ref(FB.db,p),o)};
+const runTransaction=async(p,fn)=>{need();const r=await FB.runTransaction(FB.ref(FB.db,p),fn);return{committed:r.committed,snapshot:{val:()=>r.snapshot.val()}}};
+const onValue=(p,cb,er)=>FB.onValue(FB.ref(FB.db,p),s=>cb({val:()=>s.val()}),er||(e=>toast('Cloud read failed: '+e.message,1)));
+/* Firebase drops empty arrays/objects: put them back so the rest of the app can rely on them */
+function normCloud(v){['items'].forEach(c=>Object.values(v[c]||{}).forEach(x=>{x.designs=Object.values(x.designs||{});x.rules=Object.values(x.rules||{})}));['stamps','designs'].forEach(c=>Object.values(v[c]||{}).forEach(x=>{if(x.cats)x.cats=Object.values(x.cats)}))}
+function verCheck(){const mv=+((S.appMeta||{}).minVer)||0;if(TG_VER<mv){if(WRITE_OK)alert('This copy of tag_generator.html is OLDER than the one already in use.\n\nIt is read-only now. Download the newest copy.');WRITE_OK=false;document.body.classList.add('old')}else{WRITE_OK=true;document.body.classList.remove('old');if(TG_VER>mv&&CONN&&ORIGIN_OK&&FB.auth.currentUser)FB.set(FB.ref(FB.db,R('appMeta/minVer')),TG_VER).catch(()=>{})}}
+async function cloudRestore(v){const K2=s=>String(s).replace(/[.$#\[\]\/]/g,'_');v=clean(v);delete v.appMeta;delete v.printQueue;
+ ['items','stamps','designs'].forEach(c=>{if(!v[c])return;const o={};Object.values(v[c]).forEach(x=>{x.name=String(x.name).trim();if(x.prefix)x.prefix=x.prefix.trim();o[K2(x.name)]=x});v[c]=o});
+ Object.values(v.tags||{}).forEach(g=>{['item','stamp','design'].forEach(f=>{if(g[f])g[f]=String(g[f]).trim()})});
+ for(const key of Object.keys(v)){if(key=='tags'){const ks=Object.keys(v.tags);for(let i=0;i<ks.length;i+=500){const b={};ks.slice(i,i+500).forEach(x=>b['tags/'+x]=v.tags[x]);await update(R(''),b)}}else await update(R(''),{[key]:v[key]})}}
+let LOFF=0;function localOffer(){if(LOFF)return;LOFF=1;let o;try{o=JSON.parse(lsg('tagsoft_db')||'null')}catch(e){}const t=o&&o.tagsoft;if(!t||Object.keys(S.tags||{}).length||Object.keys(S.items||{}).length)return;
+ if(!confirm('This browser still holds data saved before the cloud connection ('+Object.keys(t.tags||{}).length+' tags, '+Object.keys(t.items||{}).length+' items).\n\nUpload it to the cloud now?'))return;
+ cloudRestore(t).then(()=>toast('Uploaded to the cloud')).catch(e=>alert('Upload failed: '+e.message))}
+window.boot=()=>{if(!window._cn){window._cn=1;FB.onValue(FB.ref(FB.db,'.info/connected'),s=>{CONN=!!s.val();document.body.classList.toggle('off',!CONN)})}
+ if(UNSUB)UNSUB();UNSUB=onValue(R(''),s=>{const v=s.val()||{};normCloud(v);S=Object.assign({stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},v);verCheck();render();localOffer();psStart()})};
+/* ---- sign-in (same email + password as the POS) ---- */
+function loginUI(msg){$('#app').innerHTML=`<div class="card" style="max-width:360px;margin:40px auto"><h3>Sign in</h3><p class="mut">Use the same email and password as the POS.</p><label>Email</label><input id="lge" type="email" autocomplete="username"><label>Password</label><input id="lgp" type="password" autocomplete="current-password" onkeydown="if(event.key=='Enter')lgGo()"><p id="lgm" style="color:#b00">${msg||''}</p><div class="bar"><button class="p" onclick="lgGo()">Sign in</button></div></div>`}
+window.lgGo=()=>{FB.signIn(FB.auth,$('#lge').value.trim(),$('#lgp').value).catch(e=>{$('#lgm').textContent=e.code=='auth/network-request-failed'?'No internet connection.':'Sign-in failed. Check email and password. ('+(e.code||e.message)+')'})};
+window.signOutTG=()=>{if(confirm('Sign out of the tag generator?'))FB.signOut(FB.auth)};
+let BOOTED=false;function startAuth(){FB.onAuth(FB.auth,u=>{if(!u){BOOTED=false;if(UNSUB){UNSUB();UNSUB=null}psStop();loginUI();return}if(!BOOTED){BOOTED=true;boot()}if(!ORIGIN_OK&&!window._roa){window._roa=1;document.body.classList.add('ro');setTimeout(()=>alert('Read-only mode\n\nThis copy is running from:\n'+location.origin+'\n\nNothing can be saved from here. You can look at data and print, but changes are disabled.\n\nOpen the official page:\n'+ALLOWED_ORIGIN),400)}})}
+addEventListener('unhandledrejection',e=>{const m=e.reason&&e.reason.message||String(e.reason);if(/internet|older than|signed in|Saving is disabled/i.test(m))alert('Could not save: '+m)});
+/* ---- print queue: another device (phone) asks the main PC to print ---- */
+let PSU=null,PSQ=Promise.resolve(),PSJ={};
+function psStop(){if(PSU){PSU();PSU=null}}
+function psStart(){psStop();if(lsg('tg_ps')!='1'||!window.FB||!FB.auth.currentUser)return;
+ PSU=onValue(R('printQueue'),s=>{PSJ=s.val()||{};const now=Date.now();Object.values(PSJ).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(x=>{
+  if(x.status=='pending')PSQ=PSQ.then(()=>psRun(x.id));
+  else if((x.status=='done'||x.status=='error')&&now-(x.ts||0)>864e5)set(R('printQueue/'+x.id),null).catch(()=>{})})})}
+async function psRun(id){try{const r=await runTransaction(R('printQueue/'+id+'/status'),c=>c=='pending'?'printing':undefined);if(!r.committed)return;
+ const j=PSJ[id]||{},l=Object.values(j.tags||{});try{await printLocal(l,1);await update(R('printQueue/'+id),{status:'done',doneAt:Date.now()});toast('Printed '+l.length+' tag(s) sent from '+(j.by||'another device'))}catch(e){await update(R('printQueue/'+id),{status:'error',err:String(e.message||e)});toast('Print failed: '+e.message,1)}}catch(e){}}
+window.tgDev=(k,v)=>{if(k=='name'){lss('tg_dev',v);return}lss('tg_ps',k=='ps'&&v?'1':'0');lss('tg_rm',k=='rm'&&v?'1':'0');psStart();render()};
+function devCard(){const u=window.FB&&FB.auth.currentUser;return`<div class="lysec"><b>This device</b><p class="mut" style="margin:4px 0">Signed in as ${hx(u?u.email:'')} <button onclick="signOutTG()">Sign out</button></p>
+ <label><input type="checkbox" style="width:auto" ${lsg('tg_ps')=='1'?'checked':''} onchange="tgDev('ps',this.checked)"> Print server: this PC prints tags sent from other devices (needs the print helper running here)</label><br>
+ <label><input type="checkbox" style="width:auto" ${lsg('tg_rm')=='1'?'checked':''} onchange="tgDev('rm',this.checked)"> Send my prints to the main PC (use on phones)</label>
+ <div class="grid"><div><label>Device name</label><input value="${hx(lsg('tg_dev')||'')}" placeholder="e.g. Vaibhav phone" onchange="tgDev('name',this.value)"></div></div></div>`}
+window.exportDB=()=>{const o={...S};delete o.printQueue;const x=document.createElement('a');x.href=URL.createObjectURL(new Blob([JSON.stringify({tagsoft:o})],{type:'application/json'}));x.download='tagsoft_backup_'+new Date().toISOString().slice(0,10)+'.json';x.click()};
+window.delAllStock=async()=>{const ks=Object.keys(S.tags||{}).filter(x=>S.tags[x].status!='archived');if(!ks.length)return alert('There is no stock to delete');
+ if(!confirm('Delete ALL '+ks.length+' tags from stock?\n\nA full backup file will download first.\nTheir tag numbers become free, so you can import them again.\nItems, stamps, designs, layout, settings and next-number counters are kept.'))return;
+ if((prompt('Type DELETE to delete all '+ks.length+' tags')||'').trim()!='DELETE')return alert('Cancelled. Nothing was deleted.');
+ exportDB();await new Promise(r=>setTimeout(r,800));
+ for(let i=0;i<ks.length;i+=1000)await update(R(''),Object.fromEntries(ks.slice(i,i+1000).map(x=>['tags/'+x,null])));
+ editing=null;toast('✓ '+ks.length+' tags deleted');render()};
+window.importDB=async()=>{const f=$('#jf').files[0];if(!f||!confirm('Replace ALL data with this backup?\n\nA backup of the current data downloads first.'))return;const j=JSON.parse(await f.text());exportDB();await new Promise(r=>setTimeout(r,800));await set(R('tags'),null);await cloudRestore(j.tagsoft||j);toast('Backup restored')};
+const $=s=>document.querySelector(s),k=s=>String(s).replace(/[.$#\[\]\/]/g,'_'),n=v=>parseFloat(v)||0;
+const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CSH=['Gold','Silver','925 Silver'];const stC=x=>x.cats||(x.cat?[x.cat]:[]);
+let S={stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
+let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
+
+window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0()}if(v=='auto'||v=='bulk'){mode=v;vou=null;F={cat:CATS[0]};editing=null}render()};
+const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
+const vous=()=>[...new Set([...live().map(t=>+t.vou),...Object.keys(S.cfg.vous||{}).map(Number)])].filter(Boolean).sort((a,b)=>a-b);
+const maxVou=()=>Math.max(0,...Object.values(S.tags).map(t=>+t.vou||0),...Object.keys(S.cfg.vous||{}).map(Number));
+const FIELDS=[['cat','Category','sel'],['item','Item','sel'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp','sel'],['size','Size'],['design','Design','sel'],['tunch','Tunch'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['lab','Labour /g'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier']];
+const MG={s:{f:['sw','sp','swt','srs'],l:['S/wstg','S/%','S/wt','S/Rs'],t:'Sale making'},p:{f:['pw','pp','pwt','prs'],l:['P/wstg','P/%','P/wt','P/Rs'],t:'Purchase making'}},MGS=['pw','pp','pwt','prs','sw','sp','swt','srs'],MGK={pw:'p',sw:'s'};let MT={s:'sp',p:'pw'};
+const mgO=c=>c=='F'?F:ME.f,mgT=(g,o)=>MG[g].f.find(x=>n(o[x]))||MT[g];
+function mgHtml(g,c){const m=MG[g],o=mgO(c),t=mgT(g,o);return`<div id="mg-${g}${c=='F'?'':'m'}" style="grid-column:span 2"><label>${m.t}</label><div class="mgr"><select class="mgs" onchange="mgS('${g}','${c}',this.value)">${m.f.map((x,i)=>`<option value="${x}" ${x==t?'selected':''}>${m.l[i]}</option>`).join('')}</select><input class="mgv" inputmode="decimal" value="${hx(o[t]??'')}" oninput="mgV('${g}','${c}',this.value)"></div></div>`}
+window.mgS=(g,c,t)=>{const o=mgO(c),v=o[mgT(g,o)]??'';MG[g].f.forEach(x=>o[x]='');o[t]=v;MT[g]=t};
+window.mgV=(g,c,v)=>{const o=mgO(c),t=mgT(g,o);MT[g]=t;MG[g].f.forEach(x=>{if(x!=t)o[x]=''});o[t]=v.trim()};
+function mgSync(){['s','p'].forEach(g=>{const e=$('#mg-'+g);if(!e)return;const t=mgT(g,F);e.querySelector('.mgs').value=t;e.querySelector('.mgv').value=F[t]??''})}
+function opts(f){const c=F.cat;if(f=='cat')return CATS;
+ if(f=='item')return Object.values(S.items).filter(i=>i.cat==c).map(i=>i.name).sort();
+ if(f=='stamp')return Object.values(S.stamps).filter(s=>stC(s).includes(c)).map(s=>s.name);
+ if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
+function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['fetch','🔎','Fetch / Delete','Find tags by number, voucher, item or date, then delete'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, layout, printer']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
+ else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='fetch')fetchUI(a);else if(view=='reprint')reprint(a);else entry(a)}
+function entry(a){const vl=vous();if(vou==null)vou=vl.length?vl[vl.length-1]:maxVou()+1;
+ const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
+ const fh=([f,l,t])=>{if(MGS.includes(f))return MGK[f]?mgHtml(MGK[f],'F'):'';const o=t=='sel'?opts(f):null;const v=F[f]??'';
+ return`<div><label>${l}</label>${o?`<select data-f="${f}">${f=='cat'?'':'<option value="">'+(o.length?'':'— none: add in Setting —')+'</option>'}${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-f="${f}" value="${v}" ${f=='nw'?'readonly':''} oninput="sv('${f}',this.value,1)">`}</div>`};
+ if(!editing&&!n(F.pcs))F.pcs='1';
+ const fl=l=>l.map(f=>fh(FIELDS.find(x=>x[0]==f))).join('');
+ const inp1=fl(['cat','item','supplier']),inp=fl(['pcs','stamp','tunch','pw','lab','sw','mrp','prate','srate']);
+ const act=document.activeElement,af=act&&act.dataset?act.dataset.f:null;
+ const ql=f=>FIELDS.find(x=>x[0]==f)[1];
+ const fq=f=>fh(FIELDS.find(x=>x[0]==f));
+ const qb=`<div class="card qk"><div class="q-next">${editing?'Editing tag':'Next tag'}: <b>${hx(editing||peekNo((S.items[k(F.item||'')]||{}).prefix)||'—')}</b></div><div class="qg"><div class="q-huid"><label>${ql('huid')}</label><input data-f="huid" id="qhuid" autocapitalize="characters" enterkeyhint="next" autocomplete="off" value="${hx(F.huid??'')}" oninput="qIn('huid',this)" onkeydown="qKey(event,'huid')" onfocus="this.select()"></div><div class="q-less"><label>${ql('less')}</label><input data-f="less" id="qless" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${hx(F.less??'')}" oninput="qIn('less',this)" onfocus="this.select()"></div><div class="q-gw"><label>${ql('gw')} <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:400">— Enter ${editing?'updates':mode=='auto'?'prints':'adds'}</span></label><input data-f="gw" id="qgw" placeholder="0.000" inputmode="decimal" enterkeyhint="go" autocomplete="off" value="${hx(F.gw??'')}" oninput="qIn('gw',this)" onkeydown="qKey(event,'gw')" onfocus="this.select()"></div><div class="q-size">${fq('size')}</div><div class="q-des">${fq('design')}</div><div class="q-nw"><label>${ql('nw')}</label><input data-f="nw" readonly tabindex="-1" value="${hx(F.nw??'')}"></div><div class="q-btn"><button class="p" onclick="gen()">${editing?'Update + Reprint':mode=='auto'?'Generate + Print':'Add'}</button>${mode=='bulk'?'<button onclick="printAll()">Print all</button>':''}</div></div></div>`;
+ a.innerHTML=`<h3>${mode=='auto'?'Auto Print':'Bulk Print'} — Voucher ${vou}</h3><div class="card"><div class="sh">Item</div><div class="grid">${inp1}</div></div>
+ <div class="card dc"><div class="sh">Stamp, making &amp; rates</div><div class="grid">${inp}</div>
+</div>
+ ${qb}
+ <div class="card"><div class="bar"><b>Voucher</b><button onclick="nv(-1)">◀</button><b>${vou}</b><button onclick="nv(1)">▶</button><button onclick="vou=maxVou()+1;render()">+ New</button><span>${vt.length?vt.length+' tags':'Nil'}</span></div>
+ <table><tr><th>Tag</th><th>Item</th><th>Gr</th><th>Net</th><th>Stamp</th><th>Size</th><th></th></tr>${vt.map(t=>`<tr class="r" onclick="ed('${t.tagNo}')"><td>${t.tagNo}</td><td>${t.item}</td><td>${t.gw}</td><td>${t.nw}</td><td>${t.stamp||''}</td><td>${t.size||''}</td><td><button class="d" onclick="event.stopPropagation();del('${t.tagNo}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No tags in this voucher yet — fill the boxes, enter Gross wt and press Enter.</td></tr>'}</table></div>
+ <div class="bar"><button onclick="go('home')">Cancel</button></div>`;
+ if(FG){const g=$('#'+FG);FG=false;if(g)g.focus()}else if(af){const e=a.querySelector('[data-f="'+af+'"]');if(e&&e.focus){e.focus();try{if(e.setSelectionRange&&e.type!='number')e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}}
+window.sv=(f,v,q)=>{if(f=='gw'||f=='less'){v=String(v).replace(/[^0-9.]/g,'').replace(/^(\d*\.\d*)\./,'$1');v=v.replace(/(\.\d{3})\d+/,'$1')}F[f]=v;if(f=='cat'){F.item=F.stamp=F.design=''}if(f=='item'){const it=S.items[k(v)];if(it)F.design='';preset()}
+ if(f=='gw'||f=='less'){F.nw=Math.max(0,n(F.gw)-n(F.less)).toFixed(3);preset()}
+ if(!q)render();else if(f=='gw'||f=='less'){const i=[...document.querySelectorAll('.grid input')];FIELDS.forEach(([ff],ix)=>{});document.querySelectorAll('input[data-f]').forEach(e=>e.value=F[e.dataset.f]??'');mgSync()}};
+function preset(){if(editing)return;const it=S.items[k(F.item||'')];if(!it||!it.rules)return;const w=n(F.nw);if(!w)return;const r=it.rules.find(r=>w>=n(r.min)&&w<=n(r.max));if(r){['sw','sp','swt','srs'].forEach(x=>F[x]='');F[r.type]=r.val}}
+window.nv=d=>{const l=vous();const i=l.indexOf(vou);const j=i+d;if(l[j]!=null)vou=l[j];render()};
+window.ed=t=>{editing=t;F={...S.tags[t]};render()};
+window.del=async t=>{if(!confirm('Delete tag '+t+'? Its number stays blocked.'))return;await update(R('tags/'+t),{status:'archived'});if(editing==t){editing=null;F={cat:CATS[0]}}};
+function peekNo(pre){if(!pre)return'';let i=(+(S.counters||{})[k(pre)]||0)+1;while(S.tags[pre+i])i++;return pre+i}
+async function nextNo(pre){for(let i=0;i<5000;i++){const r=await runTransaction(R('counters/'+k(pre)),c=>(c||0)+1);const no=pre+r.snapshot.val();if(!S.tags[no])return no}throw new Error('No free number for prefix '+pre)}
+window.gen=async()=>{const it=S.items[k(F.item||'')];if(!it||!F.cat||(!n(F.gw)&&!(n(F.mrp)>0)))return alert('Category, item and gross weight (or MRP) are required');
+ if(!n(F.gw)){F.gw='';F.less='';F.nw=''}
+ if(F.stamp&&!opts('stamp').includes(F.stamp))F.stamp='';
+ if(n(F.mrp)>0)['sw','sp','swt','srs'].forEach(x=>F[x]='');
+ if(!n(F.pcs))F.pcs='1';
+ let t;if(editing){t={...F};await update(R('tags/'+editing),t)}else{const no=await nextNo(it.prefix);t={...F,tagNo:no,name:it.printName||it.name,letter:it.letter||'',vou,vtype:'TG',ts:Date.now(),status:'live',printed:0};await set(R('tags/'+no),t);await set(R('cfg/vous/'+vou),1)}
+ if(mode=='auto'||editing){printTags([t]);await update(R('tags/'+t.tagNo),{printed:1})}
+ toast('✓ '+t.tagNo+(editing?' updated':mode=='auto'?' created':' added'));const keep={...F};['gw','less','nw','huid'].forEach(x=>keep[x]='');F=editing?{cat:CATS[0]}:keep;editing=null;render()};
+window.printAll=()=>{const l=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived'&&!t.printed);if(!l.length)return alert('Nothing pending');printTags(l);l.forEach(t=>update(R('tags/'+t.tagNo),{printed:1}))};
+const C39={0:'nnnwwnwnn',1:'wnnwnnnnw',2:'nnwwnnnnw',3:'wnwwnnnnn',4:'nnnwwnnnw',5:'wnnwwnnnn',6:'nnwwwnnnn',7:'nnnwnnwnw',8:'wnnwnnwnn',9:'nnwwnnwnn',A:'wnnnnwnnw',B:'nnwnnwnnw',C:'wnwnnwnnn',D:'nnnnwwnnw',E:'wnnnwwnnn',F:'nnwnwwnnn',G:'nnnnnwwnw',H:'wnnnnwwnn',I:'nnwnnwwnn',J:'nnnnwwwnn',K:'wnnnnnnww',L:'nnwnnnnww',M:'wnwnnnnwn',N:'nnnnwnnww',O:'wnnnwnnwn',P:'nnwnwnnwn',Q:'nnnnnnwww',R:'wnnnnnwwn',S:'nnwnnnwwn',T:'nnnnwnwwn',U:'wwnnnnnnw',V:'nwwnnnnnw',W:'wwwnnnnnn',X:'nwnnwnnnw',Y:'wwnnwnnnn',Z:'nwwnwnnnn','*':'nwnnwnwnn'};
+function bc(txt,x,y,w,h){let u=0;const s=('*'+txt.toUpperCase()+'*').split('').map(c=>C39[c]||C39[0]);s.forEach(p=>{for(const e of p)u+=e=='w'?3:1;u+=1});const m=0.12512;let cx=0,r='';
+ s.forEach(p=>{[...p].forEach((e,i)=>{const ww=(e=='w'?3:1)*m;if(i%2==0)r+=`<rect x="${cx}" y="0" width="${ww}" height="${h}"/>`;cx+=ww});cx+=m});
+ return`<svg style="left:${x}mm;top:${y}mm" width="${cx}mm" height="${h}mm" viewBox="0 0 ${cx} ${h}">${r}</svg>`}
+const liveTag=t=>{const it=S.items&&t&&t.item?S.items[k(t.item)]:null;return it?{...t,name:it.printName||it.name||t.name,letter:it.letter||''}:t};
+function printBrowser(l){l=l.map(liveTag);const c=S.cfg.nudge||{x:0,y:0};const o=(x,y)=>`left:${x+n(c.x)}mm;top:${y+n(c.y)}mm`;
+ /* layout copied from MMI 82by12 PDF: left text x=3.17, right column x=30.69, nothing past ~54mm */
+ const B=n(c.font)||7,fit=(t,W,max)=>Math.min(max,(W/(Math.max(String(t).length,1)*0.68))/0.3528).toFixed(2)+'pt';
+ $('#lbl').innerHTML=l.map(t=>{const gold=t.cat==CATS[0],f3=v=>n(v).toFixed(3);
+ const row=gold?`${t.tagNo}&nbsp;&nbsp;&nbsp;${t.stamp||''}`:`${t.tagNo}&nbsp;&nbsp;&nbsp;${t.size?'SIZE='+t.size:''}`;
+ const rows=n(t.gw)?[`G.W.= ${f3(t.gw)}`,`N.W.= ${f3(t.nw)}`]:[];if(gold&&t.size)rows.push(`SIZE= ${t.size}`);if(t.huid)rows.push(`HUID= ${t.huid}`);
+ const sp=rows.length>3?2.65:2.95,fz=(rows.length>3?B-0.5:B)+'pt';
+ return`<div class="L">${rows.map((r,x)=>`<div style="${o(3.2,0.2+sp*x)};font-size:${fz}">${r}</div>`).join('')}
+ ${bc(t.tagNo,30.65,0.3,0,4.6)}<div style="${o(30.65,5.3)};font-size:${fit(row.replace(/&nbsp;/g,' '),23,B)}">${row}</div><div style="${o(30.65,8)};font-size:${fit(t.name||t.item,23,B)}">${t.name||t.item}</div>
+ ${!gold&&t.letter?`<div style="${o(50,0.1)};font-size:${B+1.5}pt">${t.letter}</div>`:''}</div>`}).join('');setTimeout(()=>window.print(),150)}
+
+/* ---- TSPL printing via local helper: barcode = printer command, text = 1-bit bitmap in any font (default Cambria) ---- */
+function paintItems(g,items,fam){g.textBaseline='top';g.fillStyle='#000';items.forEach(it=>{const parts=it.parts||[{t:it.s,dx:it.dx||0}];if(it.pre){parts.unshift({t:it.pre,dx:0})}let px=it.px;const f=()=>g.font=`bold ${px}px ${fam},serif`;f();const W2=()=>parts.reduce((a,q)=>a+q.dx+g.measureText(q.t).width,0);while(it.maxw&&W2()>it.maxw&&px>11){px--;f()}let x=it.x;parts.forEach(q=>{x+=q.dx;g.fillText(q.t,x,it.y);x+=g.measureText(q.t).width})})}
+function textBmp(items){const W=448,H=96,P=S.cfg.prn||{},fam=P.font||'Cambria',cv=document.createElement('canvas');cv.width=W;cv.height=H;
+ const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);paintItems(g,items,fam);
+ const d=g.getImageData(0,0,W,H).data,wb=W/8,inv=P.inv?1:0,out=new Uint8Array(wb*H).fill(inv?0:255);
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(d[(y*W+x)*4]<150){const k=y*wb+(x>>3),m=0x80>>(x&7);if(inv)out[k]|=m;else out[k]&=~m}
+ return{bytes:out,wb,H}}
+/* ====== LABEL LAYOUT SYSTEM (v2). The approved layout (v1, 2026-11-21) is the built-in default preset below; user edits are saved separately
+   under Setting -> Layout and can be reset to this default. Units: printer dots (203 dpi, 1 dot = 0.125 mm). Label 82 x 12 mm, printable left 55 mm. ====== */
+const catI=t=>{const i=CATS.indexOf(t.cat);return i<0?1:i};
+function defLayout(ci){const gold=ci==0,E=()=>({}),pad=r=>{while(r.length<4)r.push({});return r};
+ const r1=[{c:'G.W.= ',f:'gw',d:3},{c:'N.W.= ',f:'nw',d:3}];if(gold)r1.push({c:'SIZE= ',f:'size'});r1.push({c:'HUID= ',f:'huid'});
+ return{v:2,bar:{side:'R',x:245,y:1,h:38,n:1,w:3,lt:{on:gold?0:1,x:412,y:0,fp:8}},secs:[
+  {x:26,w:200,y0:7,p:23,pd:20,fd:1,dn:3,safe:80,rows:pad(r1)},
+  {x:128,w:112,y0:7,p:23,pd:20,fd:1,dn:3,safe:80,rows:pad([])},
+  {x:245,w:190,y0:40,p:22,lim:84,rows:pad([E(),E(),{f:'tagNo'},{f:'name'}])},
+  {x:330,w:0,y0:40,p:22,rows:pad([E(),E(),gold?{f:'stamp',j:1,g:8}:{c:'SIZE=',f:'size',j:1,g:8}])}]}}
+let LYD=null;
+function getLay(ci){if(LYD&&LYD.ci==ci)return LYD.lay;const u=(S.cfg.layout||{})[ci];if(!(u&&u.v==2&&u.secs&&Object.keys(u.secs).length==4))return defLayout(ci);const o=JSON.parse(JSON.stringify(u));o.secs=Object.values(o.secs).map(x=>{x.rows=Array.from({length:4},(_,i)=>(x.rows&&x.rows[i])||{});return x});return o}
+function fval(t,f,d){let v=f=='name'?(t.name||t.item):t[f];const e=v==null||v==='';
+ if(d!==undefined&&d!==''&&d!==null){if(e)return'';return n(v).toFixed(+d)}
+ return e?'':String(v)}
+function layoutItems(t,B,P,lay){t=liveTag(t);lay=lay||getLay(catI(t));const bar=lay.bar||{},items=[],lines=[[],[],[],[]];
+ const resv=(si,ri)=>ri<2&&((bar.side=='R'&&si>=2)||(bar.side=='L'&&si<2));
+ lay.secs.forEach((s,si)=>{const cells=[];let pos=0;s.rows.forEach((c,ri)=>{if(resv(si,ri))return;if(!c||!c.f){pos++;return}const v=fval(t,c.f,c.d);if(v==='')return;cells.push({ri,pos:pos++,c,txt:(c.c||'')+v})});
+  const nn=cells.length;if(!nn)return;
+  const dense=nn>(s.dn||3),px=B+(s.fp||0)-(dense?(s.fd||0):0);let sp=dense&&s.pd?s.pd:(s.p||23);
+  const last=cells[nn-1].pos;if(s.safe&&last>0)sp=Math.min(sp,Math.floor((s.safe-px-s.y0)/last));
+  cells.forEach((q,k)=>{let y=s.y0+sp*q.pos;if(s.lim)y=Math.min(y,s.lim-px);
+   const it={x:s.x,y,px,maxw:s.w||0,parts:[{t:q.txt,dx:0}]};lines[si][q.ri]=it;
+   const pv=si>0&&q.c.j?lines[si-1][q.ri]:null;
+   if(pv){pv.parts[pv.parts.length-1].t+=' ';pv.parts.push({t:q.txt,dx:q.c.g||0});return}
+   items.push(it)})});
+ const lt=bar.lt;if(lt&&lt.on&&t.letter)items.push({x:lt.x,y:lt.y,px:B+(lt.fp||0),maxw:0,parts:[{t:String(t.letter),dx:0}]});
+ return items}
+const LY_SAMPLES=[{cat:'GOLD JEWELLERY',tagNo:'GRG2',gw:0.1,nw:0.1,size:'10',stamp:'18K',huid:'ABC123',name:'Gold Ring'},{cat:'SILVER JEWELLERY',tagNo:'SBBC1234',gw:5,nw:4.9,size:'8',letter:'B',name:'Bangle Big Plain'},{cat:'925 SILVER JEWELLERY',tagNo:'9RG1058',gw:3,nw:3,huid:'XY99',letter:'R',name:'Ring'}];
+const LAYOUT_GOLDEN='1845848062';
+const LAYOUT_SAMPLES=[...LY_SAMPLES,{cat:'GOLD JEWELLERY',tagNo:'GCH15',gw:2.5,nw:2.4,stamp:'22K',name:'Chain'}];
+window.verifyLayout=()=>{const D=[0,1,2].map(defLayout),sig=JSON.stringify(D)+JSON.stringify(LAYOUT_SAMPLES.map(t=>layoutItems(t,19,{},D[catI(t)]))),h=String([...sig].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7));
+ const cu=[0,1,2].filter(i=>(S.cfg.layout||{})[i]).map(i=>CATS[i]);
+ alert((h==LAYOUT_GOLDEN?'Layout check OK: the approved default layout is unchanged.':'LAYOUT CHANGED! The built-in default layout does not match the approved one.\nExpected '+LAYOUT_GOLDEN+' but got '+h)+'\n\nCustom layout saved for: '+(cu.length?cu.join(', '):'none (all use the default)'))};
+function buildTSPL(l){const c=S.cfg.nudge||{},P=S.cfg.prn||{},enc=new TextEncoder(),parts=[];const ox=Math.round(n(c.x)*8),oy=Math.round(n(c.y)*8),B=n(P.px)||19;
+ const add=t=>parts.push(enc.encode(t));
+ add(`SIZE 82 mm,12 mm\r\nGAP ${P.gap??3} mm,0 mm\r\nDIRECTION ${P.dir??1}\r\nDENSITY ${P.den??8}\r\nSPEED ${P.spd??3}\r\n${(P.sh??14)?'SHIFT '+(P.sh??14)+'\r\n':''}`);
+ l.forEach(t=>{const lay=getLay(catI(t)),bar=lay.bar||{},b=textBmp(layoutItems(t,B,P,lay));
+ add('CLS\r\n');if(bar.side!='N')add(`BARCODE ${bar.x+ox},${bar.y+oy},"39",${bar.h},0,0,${bar.n||1},${bar.w||3},"${t.tagNo}"\r\n`);
+ add(`BITMAP ${ox},${oy},${b.wb},${b.H},1,`);parts.push(b.bytes);add('\r\nPRINT 1,1\r\n')});
+ return parts}
+/* ---- Layout editor (Setting -> Layout) ---- */
+let LYC=0,LYW=null;
+const LY_FIELDS=[['','-'],['tagNo','Tag No'],['name','Print name'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp'],['size','Size'],['design','Design'],['tunch','Tunch'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['letter','Item letter'],['item','Item']];
+const lyMM=v=>+((v||0)/8).toFixed(3),lyEsc=v=>String(v).replace(/"/g,'&quot;');
+function lyBody(){const L=LYW,b=L.bar,fo=LY_FIELDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join(''),sel=v=>fo.replace(`value="${v||''}"`,`value="${v||''}" selected`);
+ const cats=CATS.map((c,i)=>`<button class="${i==LYC?'on':''}" onclick="lyCat(${i})">${c}</button>`).join('');
+ const bi=(k,l)=>`<div><label>${l}</label><input value="${lyMM(b[k])}" onchange="lyB('${k}',this.value)"></div>`;
+ const secs=L.secs.map((s,si)=>{const fl=(k,l,m)=>`<div><label>${l}</label><input value="${m?lyMM(s[k]):(s[k]??'')}" onchange="lyS(${si},'${k}',this.value,${m})"></div>`;
+  const rows=s.rows.map((c,ri)=>{const rs=ri<2&&((b.side=='R'&&si>=2)||(b.side=='L'&&si<2));
+   if(rs)return`<tr><td>${ri+1}</td><td colspan="4" style="color:#888">reserved for barcode</td></tr>`;
+   return`<tr><td>${ri+1}</td><td><input value="${lyEsc(c.c||'')}" onchange="lyC(${si},${ri},'c',this.value)"></td><td><select onchange="lyC(${si},${ri},'f',this.value)">${sel(c.f)}</select></td><td><input style="width:34px" value="${c.d??''}" onchange="lyC(${si},${ri},'d',this.value)"></td>${si>0?`<td style="white-space:nowrap"><input type="checkbox" style="width:auto" ${c.j?'checked':''} onchange="lyC(${si},${ri},'j',this.checked)"> <input style="width:42px" value="${lyMM(c.g)}" onchange="lyC(${si},${ri},'g',this.value)"></td>`:'<td></td>'}</tr>`}).join('');
+  return`<div class="lysec"><b>Section ${si+1}</b><div class="grid">${fl('x','X (mm)',1)}${fl('w','Width (mm, 0=free)',1)}${fl('y0','First row Y (mm)',1)}${fl('p','Row gap (mm)',1)}</div>
+  <details><summary>Advanced</summary><div class="grid">${fl('pd','Dense gap (mm)',1)}${fl('dn','Dense if rows >',0)}${fl('fd','Dense font -(dots)',0)}${fl('fp','Font + (dots)',0)}${fl('safe','Safe bottom (mm)',1)}${fl('lim','Bottom limit (mm)',1)}</div></details>
+  <table class="lyt"><tr><th>#</th><th>Caption</th><th>Field</th><th>Dec</th><th>${si>0?'Join+gap':''}</th></tr>${rows}</table></div>`}).join('');
+ return`<div class="bar">${cats}</div><p style="margin:4px 0;color:#666">Preview (grey = fold area, red line = 55 mm). Each section is a column of 4 lines (sections 1-2 = left side, 3-4 = right side); "Join" puts a cell right after the same row of the section on its left. A line with a Field but an empty value is skipped (lines below move up); a line with no Field stays blank, so each field prints at its own line number. Dec = decimals for numbers.</p>
+ <canvas id="lyp" width="656" height="96" style="width:100%;max-width:1000px;border:1px solid #999;background:#fff"></canvas>
+ <div class="lysec"><b>Barcode</b><div class="grid"><div><label>Side</label><select onchange="lyB('side',this.value,1)"><option value="R" ${b.side=='R'?'selected':''}>Right (sections 3-4)</option><option value="L" ${b.side=='L'?'selected':''}>Left (sections 1-2)</option><option value="N" ${b.side=='N'?'selected':''}>None</option></select></div>${bi('x','X (mm)')}${bi('y','Y (mm)')}${bi('h','Height (mm)')}</div>
+ <b>Item letter (beside barcode, silver only if you wish)</b><div class="grid"><div><label>Show</label><select onchange="lyL('on',this.value)"><option value="1" ${b.lt&&b.lt.on?'selected':''}>Yes</option><option value="0" ${b.lt&&b.lt.on?'':'selected'}>No</option></select></div><div><label>X (mm)</label><input value="${lyMM((b.lt||{}).x)}" onchange="lyL('x',this.value)"></div><div><label>Y (mm)</label><input value="${lyMM((b.lt||{}).y)}" onchange="lyL('y',this.value)"></div><div><label>Font + (dots)</label><input value="${(b.lt||{}).fp||0}" onchange="lyL('fp',this.value)"></div></div></div>
+ <div class="lygrid">${secs}</div>
+ <div class="bar"><button class="p" onclick="lySave()">Save layout</button><button onclick="lyTest()">Test print (this layout)</button><button onclick="lyReset()">Reset to approved layout</button></div>`}
+function layoutUI(){if(!LYW)LYW=JSON.parse(JSON.stringify(getLay(LYC)));return`<div id="lyroot">${lyBody()}</div>`}
+function lyRender(){const r=$('#lyroot');if(r){r.innerHTML=lyBody();lyPv()}}
+function lyPv(){const cv=$('#lyp');if(!cv||!LYW)return;const P=S.cfg.prn||{},B=n(P.px)||19,g=cv.getContext('2d'),smp=LY_SAMPLES[LYC];
+ g.fillStyle='#fff';g.fillRect(0,0,656,96);g.fillStyle='#e4e4e4';g.fillRect(440,0,216,96);g.fillStyle='#c00';g.fillRect(440,0,1,96);
+ paintItems(g,layoutItems(smp,B,P,LYW),P.font||'Cambria');
+ const b=LYW.bar;if(b.side!='N'){g.fillStyle='#000';const W=(String(smp.tagNo).length+2)*16*(b.n||1);for(let x=0,i=0;x<W;i++){const w=((i*5)%7<2?(b.w||3):(b.n||1));if(i%2==0)g.fillRect(b.x+x,b.y,w,b.h);x+=w}}}
+window.lyCat=i=>{LYC=i;LYW=null;$('#lyroot').innerHTML=(LYW=JSON.parse(JSON.stringify(getLay(LYC))),lyBody());lyPv()};
+window.lyB=(k,v,raw)=>{LYW.bar[k]=raw?v:(Math.round(parseFloat(v)*8)||0);raw?lyRender():lyPv()};
+window.lyL=(k,v)=>{const l=LYW.bar.lt=LYW.bar.lt||{on:0,x:412,y:0,fp:8};if(k=='on')l.on=+v;else if(k=='fp')l.fp=parseInt(v)||0;else l[k]=Math.round(parseFloat(v)*8)||0;lyPv()};
+window.lyS=(si,k,v,m)=>{const x=parseFloat(v);LYW.secs[si][k]=v===''?undefined:(m?Math.round(x*8):x)||0;lyPv()};
+window.lyC=(si,ri,k,v)=>{const c=LYW.secs[si].rows[ri];if(k=='j')c.j=v?1:0;else if(k=='g')c.g=Math.round(parseFloat(v)*8)||0;else if(k=='d')c.d=v===''?'':Math.max(0,Math.min(6,parseInt(v)||0));else c[k]=v;lyPv()};
+window.lySave=async()=>{await set(R('cfg/layout/'+LYC),JSON.parse(JSON.stringify(LYW)));toast('✓ Layout saved for '+CATS[LYC])};
+window.lyReset=async()=>{if(!confirm('Reset '+CATS[LYC]+' to the approved layout?'))return;await set(R('cfg/layout/'+LYC),null);LYW=JSON.parse(JSON.stringify(defLayout(LYC)));lyRender()};
+window.lyTest=async()=>{LYD={ci:LYC,lay:JSON.parse(JSON.stringify(LYW))};try{await printTags([{...LY_SAMPLES[LYC]}])}finally{LYD=null}};
+async function printLocal(l,quiet){const P=S.cfg.prn||{},url=(P.url||'http://localhost:9101')+'/print';
+ try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:new Blob(buildTSPL(l),{type:'text/plain'})});const j=await r.json();if(!j.ok)throw new Error(j.error)}
+ catch(e){if(quiet)throw e;if(confirm('Print helper problem: '+e.message+'\n\nPrint with the browser instead?'))printBrowser(l)}}
+async function printTags(l){if(lsg('tg_rm')=='1'){try{const id=crypto.randomUUID();await set(R('printQueue/'+id),{id,status:'pending',ts:Date.now(),by:lsg('tg_dev')||'device',n:l.length,tags:l.map(t=>({...t}))});toast('Sent to the main PC ('+l.length+' tag'+(l.length>1?'s':'')+')')}catch(e){alert('Could not send to the main PC: '+e.message)}return}return printLocal(l)}
+window.rulerPrint=async()=>{const P=S.cfg.prn||{},enc=new TextEncoder(),parts=[],add=t=>parts.push(enc.encode(t)),cur=P.sh??14;
+ add(`SIZE 82 mm,12 mm\r\nGAP ${P.gap??3} mm,0 mm\r\nDIRECTION ${P.dir??1}\r\nDENSITY ${P.den??8}\r\nSPEED ${P.spd??3}\r\n`);
+ [cur,cur-40,cur+40].forEach(sh=>{add(`SHIFT ${sh}\r\nCLS\r\n`);
+ const items=[{parts:[{t:'S='+sh,dx:0}],x:150,y:30,px:16}];for(let m=0;m<=11;m++){const long=m%2==0;add(`BAR 26,${m*8},${long?60:30},1\r\n`);if(long)items.push({parts:[{t:String(m),dx:0}],x:92,y:Math.max(0,m*8-7),px:14})}
+ add(`BAR 26,95,120,1\r\nBAR 245,0,3,96\r\n`);const b=textBmp(items);add(`BITMAP 0,0,${b.wb},${b.H},1,`);parts.push(b.bytes);add('\r\nPRINT 1,1\r\n')});
+ try{const r=await fetch((P.url||'http://localhost:9101')+'/print',{method:'POST',headers:{'Content-Type':'text/plain'},body:new Blob(parts,{type:'text/plain'})});const j=await r.json();if(!j.ok)throw new Error(j.error)}catch(e){alert('Print helper problem: '+e.message)}};
+window.pingHelper=async()=>{const P=S.cfg.prn||{};try{const j=await(await fetch((P.url||'http://localhost:9101')+'/ping')).json();alert('Helper OK - printer: '+j.printer+' ('+j.mode+')')}catch(e){alert('Helper not reachable: '+e.message)}};
+const hx=v=>String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const mk=v=>{v=String(v??'').trim();return n(v)?hx(v):''};
+const tagHit=(t,q)=>[t.tagNo,t.stamp,t.size,t.design,t.huid].some(v=>String(v??'').toLowerCase().includes(q));
+const tagCmp=(x,y)=>String(x.tagNo).localeCompare(String(y.tagNo),undefined,{numeric:true});
+function stF0(){return{stamp:'',size:'',design:'',mk:'',wmin:'',wmax:''}}
+const COLS=[['tagNo','Tag','t'],['gw','Gross','n'],['less','Less','n'],['nw','Net','n'],['pcs','Pcs','n'],['stamp','Stamp','t'],['size','Size','t'],['design','Design','t'],['huid','HUID','t'],['tunch','Tunch','n'],['pw','P/wstg','n'],['lab','Labour','n'],['sw','S/wstg','n'],['sp','S/%','n'],['swt','S/wt','n'],['srs','S/Rs','n'],['mrp','MRP','n'],['vou','Vou','n']];
+const TY=Object.fromEntries([['item','t'],['cat','t'],['c','n'],['g','n'],['n','n'],...COLS.map(c=>[c[0],c[2]])]);
+const hasMk=t=>['sw','sp','swt','srs'].some(f=>n(t[f]));
+const stFa=()=>Object.values(stF).some(v=>v!=='');
+const tagOK=t=>(!stF.stamp||t.stamp==stF.stamp)&&(!stF.size||String(t.size??'').trim()==stF.size)&&(!stF.design||t.design==stF.design)&&(!stF.mk||(stF.mk=='y')==hasMk(t))&&(stF.wmin===''||n(t.nw)>=n(stF.wmin))&&(stF.wmax===''||n(t.nw)<=n(stF.wmax));
+const srt=(l,s)=>l.slice().sort((x,y)=>{const a=x[s.k],b=y[s.k];const r=TY[s.k]=='n'?n(a)-n(b):String(a??'').localeCompare(String(b??''),undefined,{numeric:true,sensitivity:'base'});return(r||tagCmp(x,y))*s.d});
+const arw=(s,c)=>`<span class="ar">${s.k==c?(s.d>0?'▲':'▼'):'⇅'}</span>`;
+const cell=(t,c)=>c=='pcs'&&!n(t.pcs)?'1':c=='vou'?(t.vou?'V'+hx(t.vou):''):['less','pcs','pw','lab','sw','sp','swt','srs','mrp'].includes(c)?mk(t[c]):hx(t[c]);
+function stTable(l,si,cap){const cols=(si?[['item','Item','t']]:[]).concat(COLS),s=stSD;l=srt(l,s);if(cap)l=l.slice(0,cap);
+ return`<div class="tw"><table><tr class="g1"><th colspan="${(si?1:0)+9}"></th><th colspan="3" class="grp">Purchase</th><th colspan="4" class="grp">Sale making</th><th colspan="2"></th></tr><tr class="g2">${cols.map(([c,t,y])=>`<th class="s${y=='n'?' num':''}${s.k==c?' act':''}" onclick="stSo('D','${c}')">${t}${arw(s,c)}</th>`).join('')}</tr>${l.map(t=>`<tr class="r" data-t="${hx(t.tagNo)}" onclick="stEd(this.dataset.t)">${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${cell(t,c)}</td>`).join('')}</tr>`).join('')}</table></div>`}
+const chips=(c,g,nn,lab)=>`<div class="chips">${lab?`<span class="chip cat">${hx(lab)}</span>`:''}<span class="chip"><b>${c}</b> tags</span><span class="chip">Gross <b>${g.toFixed(3)}</b></span><span class="chip">Net <b>${nn.toFixed(3)}</b></span></div>`;
+const catChips=rows=>{const g={};rows.forEach(r=>{const x=g[r.cat]=g[r.cat]||{c:0,g:0,n:0};x.c+=r.c;x.g+=r.g;x.n+=r.n});return[...CATS,...Object.keys(g).filter(c=>!CATS.includes(c))].filter(c=>g[c]).map(c=>chips(g[c].c,g[c].g,g[c].n,c)).join('')};
+function stT(){const q=stQ.trim().toLowerCase(),L=live().filter(tagOK),sum=f=>l=>l.reduce((s,t)=>s+n(t[f]),0);
+ if(stI!=null){const l=L.filter(t=>t.item==stI&&(!q||tagHit(t,q)));return chips(l.length,sum('gw')(l),sum('nw')(l),l[0]&&l[0].cat)+(l.length?stTable(l,0):'<p class="mut">No tags match.</p>')}
+ const by={};L.forEach(t=>{if(filt&&t.cat!=filt)return;const b=by[t.item]=by[t.item]||{item:t.item,cat:t.cat,c:0,g:0,n:0};b.c++;b.g+=n(t.gw);b.n+=n(t.nw)});
+ const rows=srt(Object.values(by).filter(r=>!q||String(r.item).toLowerCase().includes(q)).map(r=>({...r,tagNo:r.item})),stSL),s=stSL;
+ const th=(c,t,y)=>`<th class="s${y?' num':''}${s.k==c?' act':''}" onclick="stSo('L','${c}')">${t}${arw(s,c)}</th>`;
+ let h=catChips(rows)+(rows.length?`<div class="tw"><table><tr>${th('item','Item')}${th('cat','Category')}${th('c','Tags',1)}${th('g','Gross',1)}${th('n','Net',1)}</tr>${rows.map(r=>`<tr class="r" data-i="${hx(r.item)}" onclick="stO(this.dataset.i)"><td>${hx(r.item)}</td><td>${cbg(r.cat)}</td><td class="num">${r.c}</td><td class="num">${r.g.toFixed(3)}</td><td class="num">${r.n.toFixed(3)}</td></tr>`).join('')}</table></div>`:'<p class="mut">No items match.</p>');
+ if(q){const l=L.filter(t=>(!filt||t.cat==filt)&&tagHit(t,q));if(l.length)h+=`<h4>Matching tags (${l.length}${l.length>200?', showing first 200':''})</h4>`+stTable(l,1,200)}
+ return h}
+function stFB(){const base=live().filter(t=>stI!=null?t.item==stI:(!filt||t.cat==filt));
+ const dv=f=>[...new Set(base.map(t=>String(t[f]??'').trim()).filter(Boolean))].sort((x,y)=>x.localeCompare(y,undefined,{numeric:true}));
+ const sel=(l,f)=>`<div><label>${l}</label><select onchange="stF.${f}=this.value;stR()"><option value="">All</option>${dv(f).map(v=>`<option value="${hx(v)}" ${stF[f]==v?'selected':''}>${hx(v)}</option>`).join('')}</select></div>`;
+ return`${stI==null?`<div><label>Category</label><select onchange="filt=this.value;stF=stF0();render()"><option value="">All</option>${CATS.map(c=>`<option ${c==filt?'selected':''}>${c}</option>`).join('')}</select></div>`:''}${sel('Stamp','stamp')}${sel('Size','size')}${sel('Design','design')}<div><label>Sale making</label><select onchange="stF.mk=this.value;stR()"><option value="">All</option><option value="y" ${stF.mk=='y'?'selected':''}>Set</option><option value="n" ${stF.mk=='n'?'selected':''}>Not set</option></select></div><div><label>Net wt from</label><input inputmode="decimal" value="${hx(stF.wmin)}" oninput="stF.wmin=this.value.trim();stR()"></div><div><label>Net wt to</label><input inputmode="decimal" value="${hx(stF.wmax)}" oninput="stF.wmax=this.value.trim();stR()"></div><div><button onclick="stF=stF0();render()">Clear filters</button></div>`}
+function stock(a){const bx=`<div class="grow"><label>Search</label><input placeholder="${stI!=null?'Tag no, stamp, size, design, HUID':'Item, tag no, stamp, size, design, HUID'}" value="${hx(stQ)}" oninput="stS(this.value)"></div>`;
+ const fb=`<div class="fbar${stFa()?' on':''}" id="stf">${bx}${stFB()}</div>`;
+ a.innerHTML=stI!=null?`<div class="bar"><button onclick="stI=null;stQ='';stF=stF0();render()">◀ All items</button></div><h3>Stock — ${hx(stI)}</h3>${fb}<div id="stt">${stT()}</div>`:`<h3>Stock</h3>${fb}<div id="stt">${stT()}</div>`}
+window.stR=()=>{const t=$('#stt');if(t)t.innerHTML=stT();const f=$('#stf');if(f)f.classList.toggle('on',stFa())};
+window.stS=v=>{stQ=v;stR()};
+window.stSo=(w,c)=>{const s=w=='L'?stSL:stSD;if(s.k==c)s.d=-s.d;else{s.k=c;s.d=1}stR()};
+window.stO=i=>{stI=i;stQ='';stF=stF0();render();scrollTo(0,0)};
+let ME=null;
+window.stEd=no=>{const t=S.tags[no];if(!t)return;ME={no,o:t,f:{...t}};stMo()};
+function stMo(){const t=ME.o,f=ME.f;
+ const stp=[...new Set([...Object.values(S.stamps).filter(x=>stC(x).includes(t.cat)).map(x=>x.name),...(t.stamp?[t.stamp]:[])])];
+ const it=S.items[k(f.item||t.item||'')],dsg=[...new Set([...(it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(t.cat)).map(d=>d.name)),...(t.design?[t.design]:[])])];
+ const inp=FIELDS.filter(([x])=>x!='cat'&&x!='item').map(([x,l])=>{if(MGS.includes(x))return MGK[x]?mgHtml(MGK[x],'M'):'';const v=f[x]??'';
+  if(x=='stamp'||x=='design'){const o=x=='stamp'?stp:dsg;return`<div><label>${l}</label><select data-m="${x}" onchange="ME.f.${x}=this.value"><option value=""></option>${o.map(y=>`<option value="${hx(y)}" ${y==v?'selected':''}>${hx(y)}</option>`).join('')}</select></div>`}
+  return`<div><label>${l}</label><input data-m="${x}" value="${hx(v)}" ${x=='nw'?'readonly':''} oninput="stMi('${x}',this.value)"></div>`}).join('');
+ let m=$('#mo');if(!m){m=document.createElement('div');m.id='mo';m.className='mo';document.body.appendChild(m)}
+ m.innerHTML=`<div class="md"><div class="mh"><div><h3 style="margin:0">Edit tag ${hx(t.tagNo)}</h3><span class="mut">${hx(t.item)} · ${hx(t.cat)}</span></div><button onclick="stMc()">✕</button></div><div class="grid"><div style="grid-column:span 2"><label>Item (changing gives a new tag number)</label><select onchange="ME.f.item=this.value;ME.f.design='';stMo()">${[...new Set([t.item,...Object.values(S.items).filter(i=>i.cat==t.cat).map(i=>i.name)])].map(x=>`<option value="${hx(x)}" ${x==(f.item||t.item)?'selected':''}>${hx(x)}</option>`).join('')}</select></div>${inp}</div><div class="bar mf"><button class="p" onclick="stMs(0)">Save</button><button onclick="stMs(1)">Save + Print</button><button onclick="stMc()">Cancel</button><span style="flex:1"></span><button class="d" onclick="stMd()">Delete tag</button></div></div>`}
+window.stMi=(x,v)=>{ME.f[x]=v;if(x=='gw'||x=='less'){ME.f.nw=Math.max(0,n(ME.f.gw)-n(ME.f.less)).toFixed(3);const e=document.querySelector('#mo input[data-m=nw]');if(e)e.value=ME.f.nw}};
+window.stMc=()=>{const m=$('#mo');if(m)m.remove();ME=null};
+const stKeep=async fn=>{const y=scrollY,sc=$('#stt .tw'),sy=sc?sc.scrollTop:0;await fn();const s2=$('#stt .tw');if(s2)s2.scrollTop=sy;scrollTo(0,y)};
+window.stMs=async pr=>{if(!ME)return;if(!n(ME.f.gw)&&!(n(ME.f.mrp)>0))return alert('Gross weight (or MRP) is required');
+ if(n(ME.f.mrp)>0)['sw','sp','swt','srs'].forEach(x=>ME.f[x]='');
+ const d={};Object.keys(ME.f).forEach(x=>{if(String(ME.f[x]??'')!==String(ME.o[x]??''))d[x]=ME.f[x]});const no=ME.no;
+ const ni=ME.f.item!=ME.o.item?S.items[k(ME.f.item)]:null;let newT=null;
+ if(ni){const oi=S.items[k(ME.o.item||'')];const op=String(no).replace(/\d+$/,'');
+  if(ni.prefix!=op){if(!confirm('Item changed to '+ME.f.item+'.\nThis tag gets a NEW number from the new item. The old number '+no+' is retired (stays blocked). Continue?'))return}
+  d.name=ni.printName||ni.name;d.letter=ni.letter||'';
+  if(ni.prefix!=op){newT={...ME.o,...ME.f,...d};delete newT.status}}
+ let pt=null;
+ await stKeep(async()=>{
+  if(newT){const nn=await nextNo(ni.prefix);newT.tagNo=nn;newT.printed=0;await set(R('tags/'+nn),newT);await update(R('tags/'+no),{status:'archived'});pt=newT}
+  else{if(Object.keys(d).length)await update(R('tags/'+no),d);pt={...S.tags[no],...d}}
+  stMc()});
+ if(pr&&pt)printTags([pt])};
+window.stMd=async()=>{if(!ME||!confirm('Delete tag '+ME.no+'? Its number stays blocked.'))return;const no=ME.no;await stKeep(async()=>{await update(R('tags/'+no),{status:'archived'});stMc()})};
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&ME)stMc()});
+
+/* ---- Fetch / Delete: find tags by criteria, then delete or reprint the selected ones ---- */
+const FD={vf:'',vt:'',tf:'',tt:'',item:'',pr:'',df:'',dt:'',res:null,sel:{}};
+const fdNo=x=>{const m=/^(.*?)(\d+)$/.exec(String(x).trim().toUpperCase());return m?{p:m[1],n:+m[2]}:null};
+function fdMatch(t){const q=FD;if(q.vf!==''&&!(+t.vou>=+q.vf))return 0;if(q.vt!==''&&!(+t.vou<=+q.vt))return 0;if(q.item&&t.item!=q.item)return 0;
+ if(q.pr=='1'&&!t.printed)return 0;if(q.pr=='0'&&t.printed)return 0;const d=t.ts?new Date(t.ts):null;
+ if(q.df&&(!d||d<new Date(q.df+'T00:00:00')))return 0;if(q.dt&&(!d||d>new Date(q.dt+'T23:59:59')))return 0;
+ if(q.tf||q.tt){const a=fdNo(q.tf||q.tt),b=fdNo(q.tt||q.tf),x=fdNo(t.tagNo);if(!x||x.p!=a.p||x.n<a.n||x.n>b.n)return 0}return 1}
+window.fdGo=()=>{['vf','vt','tf','tt','item','pr','df','dt'].forEach(x=>{const e=$('#fd_'+x);if(e)FD[x]=e.value.trim()});
+ if((FD.tf&&!fdNo(FD.tf))||(FD.tt&&!fdNo(FD.tt)))return alert('Tag numbers must end with digits, for example GRG25');
+ const a=fdNo(FD.tf||FD.tt),b=fdNo(FD.tt||FD.tf);if(a&&b&&a.p!=b.p)return alert('From and To tag numbers must have the same prefix');
+ FD.res=live().filter(fdMatch).sort(tagCmp).map(t=>t.tagNo);FD.sel={};render()};
+window.fdClr=()=>{Object.assign(FD,{vf:'',vt:'',tf:'',tt:'',item:'',pr:'',df:'',dt:'',res:null,sel:{}});render()};
+window.fdTog=(t,c)=>{FD.sel[t]=c;render()};
+window.fdAll=c=>{FD.sel={};if(c)(FD.res||[]).forEach(x=>FD.sel[x]=true);render()};
+const fdRows=()=>(FD.res||[]).map(x=>S.tags[x]).filter(t=>t&&t.status!='archived');
+window.fdDel=async()=>{const ks=fdRows().filter(t=>FD.sel[t.tagNo]).map(t=>t.tagNo);if(!ks.length)return alert('Select tags first');const free=$('#fdfree')&&$('#fdfree').checked;
+ if(!confirm('Delete '+ks.length+' tag'+(ks.length>1?'s':'')+'?\n\n'+(free?'Their numbers become free again. A backup file downloads first.':'Their numbers stay blocked and are never reused.')))return;
+ if(ks.length>=20&&(prompt('Type DELETE to delete '+ks.length+' tags')||'').trim()!='DELETE')return alert('Cancelled. Nothing was deleted.');
+ if(free){exportDB();await new Promise(r=>setTimeout(r,800))}
+ for(let i=0;i<ks.length;i+=400){const b={};ks.slice(i,i+400).forEach(x=>{if(free)b['tags/'+x]=null;else b['tags/'+x+'/status']='archived'});await update(R(''),b)}
+ FD.sel={};editing=null;toast('✓ '+ks.length+' tag'+(ks.length>1?'s':'')+' deleted');render()};
+window.fdPrint=()=>{const l=fdRows().filter(t=>FD.sel[t.tagNo]).map(liveTag);if(!l.length)return alert('Select tags first');printTags(l)};
+function fetchUI(a){const rs=fdRows(),sel=rs.filter(t=>FD.sel[t.tagNo]),sum=f=>rs.reduce((s,t)=>s+n(t[f]),0),items=Object.values(S.items||{}).map(i=>i.name).sort();
+ const inp=(id,l,ph)=>`<div><label>${l}</label><input id="fd_${id}" value="${hx(FD[id])}" ${ph?`placeholder="${ph}"`:''} onkeydown="if(event.key=='Enter')fdGo()"></div>`;
+ const dt=t=>t.ts?new Date(t.ts).toLocaleDateString('en-GB'):'';
+ a.innerHTML=`<h3>Fetch / Delete</h3><div class="card"><div class="grid">${inp('vf','Voucher from')}${inp('vt','Voucher to')}${inp('tf','Tag no from','e.g. GRG1')}${inp('tt','Tag no to','e.g. GRG50')}
+ <div><label>Item</label><select id="fd_item"><option value="">All</option>${items.map(i=>`<option ${i==FD.item?'selected':''}>${hx(i)}</option>`).join('')}</select></div>
+ <div><label>Printed</label><select id="fd_pr">${[['','All'],['1','Printed'],['0','Not printed']].map(([v,l])=>`<option value="${v}" ${v==FD.pr?'selected':''}>${l}</option>`).join('')}</select></div>
+ <div><label>Date from</label><input id="fd_df" type="date" value="${FD.df}"></div><div><label>Date to</label><input id="fd_dt" type="date" value="${FD.dt}"></div></div>
+ <div class="bar"><button class="p" onclick="fdGo()">Fetch</button><button onclick="fdClr()">Clear</button></div></div>`
+ +(FD.res==null?'':`<div class="card">${chips(rs.length,sum('gw'),sum('nw'))}${rs.length?`<div class="bar"><button class="p" onclick="fdPrint()">Reprint selected (${sel.length})</button><button style="border-color:#b00;color:#b00" onclick="fdDel()">Delete selected (${sel.length})</button><label><input type="checkbox" id="fdfree" style="width:auto"> also free the tag numbers</label></div>
+ <div class="tw"><table><tr><th><input type="checkbox" style="width:auto" ${sel.length==rs.length?'checked':''} onchange="fdAll(this.checked)"></th><th>Tag</th><th>Item</th><th class="num">Gross</th><th class="num">Net</th><th>Stamp</th><th>Size</th><th>Vou</th><th>Date</th><th>Printed</th></tr>
+ ${rs.slice(0,500).map(t=>`<tr><td><input type="checkbox" style="width:auto" data-t="${hx(t.tagNo)}" ${FD.sel[t.tagNo]?'checked':''} onchange="fdTog(this.dataset.t,this.checked)"></td><td>${hx(t.tagNo)}</td><td>${hx(t.item)}</td><td class="num">${hx(t.gw)}</td><td class="num">${hx(t.nw)}</td><td>${hx(t.stamp)}</td><td>${hx(t.size)}</td><td>${t.vou?'V'+hx(t.vou):''}</td><td>${dt(t)}</td><td>${t.printed?'Yes':''}</td></tr>`).join('')}</table></div>${rs.length>500?'<p class="mut">Showing the first 500. Select all still selects every fetched tag.</p>':''}`:'<p class="mut">No tags match.</p>'}</div>`)}
+function reprint(a){if(!RP.rows||!RP.rows.length)RP.rows=[''];RP.st=RP.st||{};
+ a.innerHTML=`<h3>Tag Print</h3><div class="card"><label>Barcode numbers — one per line (Enter = next line)</label>${RP.rows.map((v,i)=>`<div class="rpr bar" style="flex-wrap:nowrap;margin:6px 0"><input data-i="${i}" value="${hx(v)}" placeholder="e.g. 9BA3" autocapitalize="characters" autocomplete="off" oninput="rpIn(${i},this.value)" onchange="rpCh(${i},this.value)" onkeydown="if(event.key=='Enter'){event.preventDefault();rpNext(${i})}"><button class="p" onclick="rpOne(${i})">Print</button><button onclick="rpDel(${i})">✕</button></div><div class="mut" id="rps${i}" style="margin:-2px 0 4px 2px;font-size:12.5px">${RP.st[i]||''}</div>`).join('')}
+ <div class="bar"><button onclick="RP.rows.push('');render();rpFocus(RP.rows.length-1)">+ Add line</button><button class="p" onclick="rpPrint()">Print all</button><button onclick="RP={rows:[''],st:{},msg:''};render()">Clear</button></div><div id="rpm">${RP.msg||''}</div></div>`}
+function rpFocus(i){setTimeout(()=>{const e=document.querySelector('.rpr input[data-i="'+i+'"]');if(e)e.focus()},0)}
+window.rpIn=(i,v)=>{RP.rows[i]=v;delete RP.st[i];const e=$('#rps'+i);if(e)e.innerHTML=''};
+window.rpCh=(i,v)=>{const p=v.split(/[\s,;]+/).filter(Boolean);if(p.length>1){RP.rows.splice(i,1,...p);Object.keys(RP.st).forEach(x=>{if(+x>=i)delete RP.st[x]});render()}};
+window.rpDel=i=>{RP.rows.splice(i,1);RP.st={};render()};
+function rpFind(c){c=String(c).trim().toUpperCase();for(const [kk,t] of Object.entries(S.tags))if(String(t.tagNo||kk).toUpperCase()==c)return t;return null}
+window.rpNext=i=>{if(i==RP.rows.length-1){if(!(RP.rows[i]||'').trim())return;RP.rows.push('');render()}rpFocus(i+1)};
+window.rpOne=async(i,next)=>{const c=(RP.rows[i]||'').trim();if(!c)return;const t=rpFind(c);let m;
+ if(!t)m='<span style="color:var(--red)">Not found</span>';else if(t.status=='archived')m='<span style="color:var(--red)">Deleted — not printed</span>';
+ else{await printTags([t]);m='✓ Sent to printer'}
+ RP.st[i]=m;const e=$('#rps'+i);if(e)e.innerHTML=m;
+ if(next){if(i==RP.rows.length-1){RP.rows.push('');render();}rpFocus(i+1)}};
+window.rpPrint=async()=>{const q=RP.rows.map(x=>x.trim().toUpperCase()).filter(Boolean);if(!q.length)return alert('Enter at least one barcode number');
+ const ok=[],miss=[],del=[];q.forEach(c=>{const t=rpFind(c);if(!t)miss.push(c);else if(t.status=='archived')del.push(c);else ok.push(t)});
+ if(ok.length)await printTags(ok);
+ RP.msg=(ok.length?`<p>Sent to printer: <b>${ok.length}</b> tag(s)</p>`:'')+(miss.length?`<p style="color:var(--red)">Not found: ${hx(miss.join(', '))}</p>`:'')+(del.length?`<p style="color:var(--red)">Deleted (not printed): ${hx(del.join(', '))}</p>`:'');
+ const m=$('#rpm');if(m)m.innerHTML=RP.msg};
+function settings(a){const tb=['stamps','designs','items','layout','print'].map(x=>`<button class="${x==sub?'on':''}" onclick="sub='${x}';render()">${x[0].toUpperCase()+x.slice(1)}</button>`).join('');let h='';
+ if(sub=='stamps')h=`<div class="bar"><input id="sn" placeholder="Stamp name"></div><div class="bar">${CATS.map(c=>`<label><input type="checkbox" class="sck" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addS()">Add</button></div><p class="mut" style="margin:0">Tick every category the stamp belongs to. Adding an existing stamp again adds the ticked categories to it.</p><table>${Object.values(S.stamps).map(s=>`<tr><td>${s.name}</td><td>${stC(s).map(cbg).join(' ')}</td><td><button class="d" onclick="rm('stamps','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.stamps).length?'':'<p class="empty">No stamps yet — add one above.</p>'}`;
+ if(sub=='designs')h=`<div class="bar"><input id="dn" placeholder="Design name"></div><div class="bar">${CATS.map((c,i)=>`<label><input type="checkbox" class="dc" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addD()">Add</button></div><table>${Object.values(S.designs).map(s=>`<tr><td>${s.name}</td><td>${(s.cats||[]).join(', ')}</td><td><button class="d" onclick="rm('designs','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.designs).length?'':'<p class="empty">No designs yet — add one above.</p>'}`;
+ if(sub=='items')h=itemsUI();
+ if(sub=='layout')h=layoutUI();
+ if(sub=='print'){const c=S.cfg.nudge||{x:0,y:0};h=devCard()+`<div class="grid"><div><label>Nudge X (mm)</label><input id="nx" value="${c.x}"></div><div><label>Nudge Y (mm)</label><input id="ny" value="${c.y}"></div><div><label>Helper URL</label><input id="pu" value="${(S.cfg.prn||{}).url||'http://localhost:9101'}"></div><div><label>Gap (mm)</label><input id="pg" value="${(S.cfg.prn||{}).gap??3}"></div><div><label>Direction (0/1)</label><input id="pd" value="${(S.cfg.prn||{}).dir??1}"></div><div><label>Font</label><input id="pf" value="${(S.cfg.prn||{}).font||'Cambria'}"></div><div><label>Text size (dots)</label><input id="pz" value="${(S.cfg.prn||{}).px||19}"></div><div><label>Invert bitmap (0/1)</label><input id="pi" value="${(S.cfg.prn||{}).inv||0}"></div><div><label>Shift up/down (dots)</label><input id="psh" value="${(S.cfg.prn||{}).sh??14}"></div><div><label>Darkness (0-15)</label><input id="pk" value="${(S.cfg.prn||{}).den??8}"></div><div><label>Speed (1-5)</label><input id="ps" value="${(S.cfg.prn||{}).spd??3}"></div></div><div class="bar"><button class="p" onclick="saveN()">Save</button><button onclick="pingHelper()">Check helper</button><button onclick="rulerPrint()">Ruler test</button><button onclick="verifyLayout()">Verify layout</button><button onclick="printTags([{cat:CATS[0],tagNo:'GRG1',gw:1,nw:1,size:'10',stamp:'18K',name:'TEST'}])">Test print</button></div><div class="card"><b>Backup</b><div class="bar"><button onclick="exportDB()">Export backup</button><input type="file" id="jf" accept=".json" style="width:auto"><button onclick="importDB()">Restore</button></div></div><div class="card"><b>Import product_data.xlsx</b><br><input type="file" id="xf" accept=".xlsx"><div class="bar"><button class="p" onclick="imp()">Import</button><span id="ist"></span></div></div><div class="card" style="border-color:#e4b7b3"><b style="color:var(--red)">Delete all stock</b><p class="mut" style="margin:4px 0 8px">Removes every tag from stock so you can enter or import them again. A full backup file downloads first. Items, stamps, designs, layout, settings and next-number counters are kept.</p><button class="d" onclick="delAllStock()">Delete all stock…</button></div>`}
+ const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making presets'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import']};
+ if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}</div>`;return}
+ a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv()}
+window.CATS=CATS;window.printTags=printTags;window.rm=async(p,key)=>{if(confirm('Remove?'))await set(R(p+'/'+key),null)};
+window.addS=()=>{const v=$('#sn').value.trim(),c=[...document.querySelectorAll('.sck:checked')].map(x=>x.value);if(!v||!c.length)return alert('Enter a stamp name and tick at least one category');const o=S.stamps[k(v)],m=[...new Set([...(o?stC(o):[]),...c])];set(R('stamps/'+k(v)),{name:o?o.name:v,cats:m})};
+window.addD=()=>{const v=$('#dn').value.trim(),c=[...document.querySelectorAll('.dc:checked')].map(x=>x.value);if(v&&c.length)set(R('designs/'+k(v)),{name:v,cats:c})};
+window.saveN=async()=>{const nu={x:n($('#nx').value),y:n($('#ny').value)},pr={url:$('#pu').value.trim(),gap:n($('#pg').value),dir:n($('#pd').value),den:n($('#pk').value),spd:n($('#ps').value),font:$('#pf').value.trim()||'Cambria',px:n($('#pz').value)||19,inv:n($('#pi').value),sh:n($('#psh').value)};await set(R('cfg/nudge'),nu);await set(R('cfg/prn'),pr);toast('✓ Print settings saved');hsCheck()};
+let IE=null,IEO=0;window.ie=nm=>{IEO=0;IE=nm?JSON.parse(JSON.stringify(S.items[k(nm)])):{name:'',cat:CATS[0],prefix:'',printName:'',letter:'',designs:[],rules:[]};render()};
+function itemsUI(){if(!IE)return`<button class="p" onclick="ie()">+ New item</button><table>${Object.values(S.items).sort((a,b)=>a.name.localeCompare(b.name)).map(i=>`<tr class="r" onclick="ie('${i.name.replace(/'/g,"\\'")}')"><td>${i.name}</td><td>${cbg(i.cat)}</td><td>${i.prefix}</td></tr>`).join('')}</table>`;
+ const ds=Object.values(S.designs).filter(d=>(d.cats||[]).includes(IE.cat));
+ return`<div class="grid"><div><label>Name</label><input value="${IE.name}" oninput="IE.name=this.value"></div><div><label>Category</label><select onchange="IE.cat=this.value;render()">${CATS.map(c=>`<option ${c==IE.cat?'selected':''}>${c}</option>`).join('')}</select></div><div><label>Prefix</label><input value="${IE.prefix}" oninput="IE.prefix=this.value.toUpperCase()"></div><div><label>Print name</label><input value="${IE.printName||''}" oninput="IE.printName=this.value"></div><div><label>Print letter</label><input value="${IE.letter||''}" oninput="IE.letter=this.value"></div></div>
+ <label>Designs</label><div class="bar">${ds.map(d=>`<label><input type="checkbox" style="width:auto" ${(IE.designs||[]).includes(d.name)?'checked':''} onchange="tg('${d.name}',this.checked)"> ${d.name}</label>`).join('')}</div>
+ <details ${IEO||(IE.rules||[]).length?'open':''} ontoggle="IEO=this.open"><summary><b>Making presets by weight (sales)</b></summary><p class="mut" style="margin:2px 0 6px">When the net weight is within From–To, the sale making is filled in automatically.</p>${(IE.rules||[]).map((r,i)=>`<div class="rr"><div><label>From (g)</label><input inputmode="decimal" placeholder="0" value="${hx(r.min)}" oninput="IE.rules[${i}].min=this.value"></div><div><label>To (g)</label><input inputmode="decimal" placeholder="10" value="${hx(r.max)}" oninput="IE.rules[${i}].max=this.value"></div><div><label>Making type</label><select onchange="IE.rules[${i}].type=this.value">${[['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs']].map(x=>`<option value="${x[0]}" ${x[0]==r.type?'selected':''}>${x[1]}</option>`).join('')}</select></div><div><label>Value</label><input inputmode="decimal" placeholder="0" value="${hx(r.val)}" oninput="IE.rules[${i}].val=this.value"></div><button class="d" title="Remove rule" onclick="IE.rules.splice(${i},1);IEO=1;render()">✕</button></div>`).join('')}<button onclick="IE.rules.push({min:'',max:'',type:'sp',val:''});IEO=1;render()">+ Add rule</button></details>
+ <div class="bar"><button class="p" onclick="saveI()">Save</button><button onclick="IE=null;render()">Back</button></div>`}
+window.tg=(d,c)=>{IE.designs=IE.designs||[];c?IE.designs.push(d):IE.designs=IE.designs.filter(x=>x!=d)};
+window.saveI=async()=>{if(!IE)return;IE.name=(IE.name||'').trim();IE.prefix=(IE.prefix||'').trim();if(!IE.name||!IE.prefix)return alert('Name and prefix required');const dup=Object.values(S.items).find(i=>i.prefix==IE.prefix&&i.name!=IE.name);if(dup)return alert('Prefix already used by '+dup.name);const old=S.items[k(IE.name)];if(old&&old.prefix&&old.prefix!=IE.prefix&&!confirm('Prefix changes from '+old.prefix+' to '+IE.prefix+'.\n\nNew tags of this item will use '+IE.prefix+'. Tags already made keep their numbers.'))return;IE.rules=IE.rules||[];await set(R('items/'+k(IE.name)),IE);toast('✓ Item saved');IE=null};
+window.imp=async()=>{const f=$('#xf').files[0];if(!f)return;const rows=XLSX.utils.sheet_to_json(XLSX.read(await f.arrayBuffer()).Sheets.Sheet1,{defval:'',raw:false});const st=$('#ist');
+ const catOf=r=>/^925/.test(r['Item Name'])||r.Stamp=='S925'?CATS[2]:(r.Stamp=='S7'||/^S /.test(r['Item Name']))?CATS[1]:CATS[0];
+ const items={},stamps={},designs={},tags={},cnt={},bad=[];
+ rows.forEach(r=>{const m=String(r['Tag No']).match(/^(\d*[A-Z]+)(\d+)$/);if(!m)return;const cat=catOf(r),nm=r['Item Name'];
+ const it=items[k(nm)]=items[k(nm)]||{name:nm,cat,prefix:'',printName:nm,letter:'',designs:[],rules:[],_p:{}};it._p[m[1]]=(it._p[m[1]]||0)+1;
+ if(r.Stamp){const sx=stamps[k(r.Stamp)]=stamps[k(r.Stamp)]||{name:r.Stamp,cats:[]};if(!sx.cats.includes(cat))sx.cats.push(cat)}if(r.Design){const d=designs[k(r.Design)]=designs[k(r.Design)]||{name:r.Design,cats:[]};if(!d.cats.includes(cat))d.cats.push(cat);if(!it.designs.includes(r.Design))it.designs.push(r.Design)}
+ cnt[m[1]]=Math.max(cnt[m[1]]||0,+m[2]);
+ const w=n(r['Making (per g)']),mk=n(r['Making (%)']),pc=n(r['Making (per pc)']);
+ const sus=n(r.Wstg)>=40&&!n(r.Tunch);if(sus)bad.push(r['Tag No']);
+ const pq=[r.Pcs,r['Pcs.'],r.Pc,r['Pc.']].find(v=>v!==undefined&&v!==''),pqs=pq==null?'':String(pq);
+ const sk_=Object.keys(r).find(x=>/^(supplier|party|karigar)/i.test(x)),sup=sk_?String(r[sk_]).trim():'';
+ tags[r['Tag No']]={supplier:sup,pcs:pqs||'1',_pq:pqs,tunch:r.Tunch||'',pw:sus?'':(r.Wstg||''),lab:r['Lbr.']||'',tagNo:r['Tag No'],cat,item:nm,name:nm,letter:'',gw:r['Gr. Wt.'],nw:r['N. Wt.'],less:(n(r['Gr. Wt.'])-n(r['N. Wt.'])).toFixed(3),stamp:r.Stamp,size:r.Size,design:r.Design,huid:r.HUID,mrp:r.MRP,sp:r['Making (%)'],sw:r['Wastage (%)'],swt:r['Making (per g)'],srs:r['Making (per pc)'],vou:+r['Vou No.'],vtype:r['Vou Type'],ts:0,status:'live',printed:1}});
+ Object.values(items).forEach(i=>{i.prefix=Object.entries(i._p).sort((a,b)=>b[1]-a[1])[0][0];i.legacyPrefixes=Object.keys(i._p);delete i._p});
+ st.textContent='Writing '+Object.keys(tags).length+' tags…';
+ const ck={};Object.entries(cnt).forEach(([p,v])=>ck[k(p)]=Math.max(v,+(S.counters||{})[k(p)]||0));
+ await update(R(''),{stamps:{...stamps,...S.stamps},designs:{...designs,...S.designs},items:{...items,...S.items}});await update(R('counters'),ck);const ks=Object.keys(tags).filter(x=>!S.tags[x]),sk=Object.keys(tags).length-ks.length;
+ for(let i=0;i<ks.length;i+=500){const b={};ks.slice(i,i+500).forEach(x=>{const{_pq,...q}=tags[x];b['tags/'+x]=q});await update(R(''),b)}
+ const fl=[];Object.keys(tags).filter(x=>S.tags[x]).forEach(x=>['tunch','pw','lab','pcs','supplier'].forEach(f=>{if(f=='pcs'?tags[x]._pq!=='':tags[x][f]!=='')if((S.tags[x][f]==null||S.tags[x][f]===''))fl.push(['tags/'+x+'/'+f,tags[x][f]])}));
+ for(let i=0;i<fl.length;i+=1000)await update(R(''),Object.fromEntries(fl.slice(i,i+1000)));const flt=new Set(fl.map(a=>a[0].split('/')[1])).size;
+ const msg='Imported '+ks.length+' new tags'+(sk?' ('+sk+' already existed; Tunch, Wstg, Labour, Pcs and Supplier filled on '+flt+' of them where they were blank)':'')+'. Everything else on existing tags, items, stamps, designs and counters was kept.'+(bad.length?' '+bad.length+' tags have a tunch-looking number (72/76) in the Wstg column and no Tunch, so their Tunch and Wstg were left blank: '+bad.join(', ')+'.':'');const ee=$('#ist');if(ee)ee.textContent=msg;alert(msg)};
+window.onerror=(m,u,l)=>alert('Error: '+m+' (line '+l+')');
+document.addEventListener('change',e=>{const t=e.target;if(t.tagName=='SELECT'&&t.dataset.f&&(view=='auto'||view=='bulk'))sv(t.dataset.f,t.value)});
+if(window.FB)startAuth();else{addEventListener("fb-ready",startAuth,{once:true});setTimeout(()=>{if(!window.FB)$("#app").innerHTML='<div class="card"><h3>Cannot reach Firebase</h3><p>Check the internet connection and reload.</p></div>'},10000)}
+/* ===== quick entry: weight -> 3rd decimal / Enter completes the tag ===== */
+window.qIn=(f,e)=>sv(f,e.value,1);
+window.qKey=(ev,f)=>{if(ev.key!='Enter')return;ev.preventDefault();
+ if(f=='gw'){if(n(F.gw)>0)qGo();else if(n(F.mrp)>0){if(confirm('No gross weight. Make an MRP-only tag at MRP '+F.mrp+'?'))qGo()}else alert('Enter gross weight (or MRP for an MRP-only tag)')}else $('#qgw').focus()};
+window.qGo=async()=>{if(QB)return;QB=1;const hh=String(F.huid||'').trim();try{FG=hh?'qhuid':'qgw';await gen()}finally{QB=0;FG=false}};
+document.addEventListener('keydown',ev=>{if(ev.key!='Enter'||(view!='auto'&&view!='bulk'))return;const t=ev.target;
+ if(!t.closest||t.id=='qgw'||t.id=='qhuid'||!t.closest('.grid,.qk')||!(t.tagName=='INPUT'||t.tagName=='SELECT'))return;ev.preventDefault();
+ if(t.closest('.qk')){$('#qgw').focus();return}
+ const l=[...document.querySelectorAll('#app .grid input,#app .grid select')].filter(x=>!x.readOnly&&x.offsetParent);const i=l.indexOf(t);
+ const g=$('#qgw');(l[i+1]&&i>=0?l[i+1]:g).focus()});
+
+/* ===== UI helpers (v3): toast, category badge, home stats, printer status dot ===== */
+function cbg(c){const i=CATS.indexOf(c);return i<0?hx(c):`<span class="cb c${i}">${CSH[i]}</span>`}
+function homeStats(){const l=live();if(!l.length)return'<p class="sub">No tags yet</p>';const nw=a=>a.reduce((s,t)=>s+n(t.nw),0).toFixed(3);
+ return`<div class="stats"><div class="stat tot"><small>All tags in stock</small><b>${l.length}</b><span>${nw(l)} g net</span></div>${CATS.map((c,i)=>{const x=l.filter(t=>t.cat==c);return x.length?`<div class="stat"><small>${CSH[i]}</small><b>${x.length}</b><span>${nw(x)} g net</span></div>`:''}).join('')}</div>`}
+let TT=0;function toast(m,bad){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';document.body.appendChild(e)}e.textContent=m;e.className=(bad?'bad ':'')+'on';clearTimeout(TT);TT=setTimeout(()=>e.classList.remove('on'),2200)}
+window.hsCheck=async(manual)=>{const e=document.getElementById('hs');if(!e)return;const u=((S.cfg||{}).prn||{}).url||'http://localhost:9101',c=new AbortController(),t=setTimeout(()=>c.abort(),2500);
+ try{const j=await(await fetch(u+'/ping',{signal:c.signal,cache:'no-store'})).json();e.className='hs on';e.lastChild.textContent='Printer ready';if(manual)toast('✓ Print helper OK — '+j.printer)}
+ catch(x){e.className='hs off';e.lastChild.textContent='Printer offline';if(manual)toast('Print helper not reachable — start it on the main PC',1)}finally{clearTimeout(t)}};
+setTimeout(hsCheck,600);setInterval(hsCheck,20000);
+
+/* ===== back navigation (phone Back button + header Back) ===== */
+(()=>{const H=[];let ign=0;
+ const want=()=>{const d=[];if(view!='home')d.push('view');if(view=='settings'&&sub)d.push('sub');if(stI!=null)d.push('item');if(document.getElementById('mo'))d.push('modal');return d};
+ function rec(){const d=want();document.body.classList.toggle('sub',d.length>0);
+  if(d.length<H.length){const n=H.length-d.length;H.length=d.length;ign++;history.go(-n)}
+  else while(H.length<d.length){H.push(d[H.length]);history.pushState({h:H.length},'')}}
+ const r0=window.render;window.render=function(){r0.apply(this,arguments);rec()};
+ const c0=window.stMc;window.stMc=function(){c0.apply(this,arguments);rec()};
+ const o0=window.stMo;window.stMo=function(){o0.apply(this,arguments);rec()};
+ window.addEventListener('popstate',()=>{if(ign>0){ign--;return}
+  const t=H.pop();if(!t)return;
+  if(t=='modal'){const m=document.getElementById('mo');if(m)m.remove();ME=null}
+  else if(t=='sub'){sub=null;render()}
+  else if(t=='item'){stI=null;stQ='';stF=stF0();render()}
+  else{view='home';render()}
+  rec()});
+ const sh=()=>{const h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hh',h.offsetHeight+'px')};sh();addEventListener('resize',sh);
+ window.goBack=()=>{if(H.length)history.back();else go('home')};
+ rec()})();
+</script></body></html>

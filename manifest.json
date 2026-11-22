@@ -1,0 +1,32 @@
+{
+  "name": "Suhag Tag Generator",
+  "short_name": "Tag Generator",
+  "description": "Barcode tag generator for Suhag Jewellers",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#2a2118",
+  "theme_color": "#2a2118",
+  "icons": [
+    {
+      "src": "tag-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "tag-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "tag-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
