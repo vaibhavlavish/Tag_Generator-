@@ -167,8 +167,8 @@ async function cloudRestore(v){const K2=s=>String(s).replace(/[.$#\[\]\/]/g,'_')
 let LOFF=0;function localOffer(){if(LOFF)return;LOFF=1;let o;try{o=JSON.parse(lsg('tagsoft_db')||'null')}catch(e){}const t=o&&o.tagsoft;if(!t||Object.keys(S.tags||{}).length||Object.keys(S.items||{}).length)return;
  if(!confirm('This browser still holds data saved before the cloud connection ('+Object.keys(t.tags||{}).length+' tags, '+Object.keys(t.items||{}).length+' items).\n\nUpload it to the cloud now?'))return;
  cloudRestore(t).then(()=>toast('Uploaded to the cloud')).catch(e=>alert('Upload failed: '+e.message))}
-window.boot=()=>{if(!window._cn){window._cn=1;FB.onValue(FB.ref(FB.db,'.info/connected'),s=>{CONN=!!s.val();document.body.classList.toggle('off',!CONN)})}
- if(UNSUB)UNSUB();UNSUB=onValue(R(''),s=>{const v=s.val()||{};normCloud(v);S=Object.assign({stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},v);verCheck();render();localOffer();psStart()})};
+window.boot=()=>{LSIG='';if(!window._cn){window._cn=1;FB.onValue(FB.ref(FB.db,'.info/connected'),s=>{CONN=!!s.val();document.body.classList.toggle('off',!CONN)});FB.onValue(FB.ref(FB.db,'.info/serverTimeOffset'),s=>{SKEW=+s.val()||0})}
+ if(UNSUB)UNSUB();UNSUB=onValue(R(''),s=>{const v=s.val()||{};delete v.printQueue;delete v.printServer;const sg=JSON.stringify(v);if(sg===LSIG)return;LSIG=sg;normCloud(v);S=Object.assign({stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},v);verCheck();render();localOffer();if(!PSU&&!PSU2)psStart()})};
 /* ---- sign-in (same email + password as the POS) ---- */
 function loginUI(msg){$('#app').innerHTML=`<div class="card" style="max-width:360px;margin:40px auto"><h3>Sign in</h3><p class="mut">Use the same email and password as the POS.</p><label>Email</label><input id="lge" type="email" autocomplete="username"><label>Password</label><input id="lgp" type="password" autocomplete="current-password" onkeydown="if(event.key=='Enter')lgGo()"><p id="lgm" style="color:#b00">${msg||''}</p><div class="bar"><button class="p" onclick="lgGo()">Sign in</button></div></div>`}
 window.lgGo=()=>{FB.signIn(FB.auth,$('#lge').value.trim(),$('#lgp').value).catch(e=>{$('#lgm').textContent=e.code=='auth/network-request-failed'?'No internet connection.':'Sign-in failed. Check email and password. ('+(e.code||e.message)+')'})};
@@ -176,18 +176,33 @@ window.signOutTG=()=>{if(confirm('Sign out of the tag generator?'))FB.signOut(FB
 let BOOTED=false;function startAuth(){FB.onAuth(FB.auth,u=>{if(!u){BOOTED=false;if(UNSUB){UNSUB();UNSUB=null}psStop();loginUI();return}if(!BOOTED){BOOTED=true;boot()}if(!ORIGIN_OK&&!window._roa){window._roa=1;document.body.classList.add('ro');setTimeout(()=>alert('Read-only mode\n\nThis copy is running from:\n'+location.origin+'\n\nNothing can be saved from here. You can look at data and print, but changes are disabled.\n\nOpen the official page:\n'+ALLOWED_ORIGIN),400)}})}
 addEventListener('unhandledrejection',e=>{const m=e.reason&&e.reason.message||String(e.reason);if(/internet|older than|signed in|Saving is disabled/i.test(m))alert('Could not save: '+m)});
 /* ---- print queue: another device (phone) asks the main PC to print ---- */
-let PSU=null,PSQ=Promise.resolve(),PSJ={};
-function psStop(){if(PSU){PSU();PSU=null}}
-function psStart(){psStop();if(lsg('tg_ps')!='1'||!window.FB||!FB.auth.currentUser)return;
- PSU=onValue(R('printQueue'),s=>{PSJ=s.val()||{};const now=Date.now();Object.values(PSJ).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(x=>{
-  if(x.status=='pending')PSQ=PSQ.then(()=>psRun(x.id));
-  else if((x.status=='done'||x.status=='error')&&now-(x.ts||0)>864e5)set(R('printQueue/'+x.id),null).catch(()=>{})})})}
+let PSU=null,PSU2=null,PST=0,PSQ=Promise.resolve(),PSJ={},PSS=null,SKEW=0,LSIG='',MYJ={};
+const SNOW=()=>Date.now()+SKEW,PS_ONLINE=45e3,PS_EXPIRE=6e5; /* PC counts as online if its heartbeat is <45 s old; a job not picked up within 10 min is cancelled */
+function psStop(){if(PSU){PSU();PSU=null}if(PSU2){PSU2();PSU2=null}if(PST){clearInterval(PST);PST=0}}
+/* main PC: tell the phones "I am here and the printer helper answers" every 15 s */
+async function psBeat(){if(!window.FB||!FB.auth.currentUser||!CONN)return;const u=((S.cfg||{}).prn||{}).url||'http://localhost:9101',c=new AbortController(),t=setTimeout(()=>c.abort(),2500);let ok=false,pn='';
+ try{const j=await(await fetch(u+'/ping',{signal:c.signal,cache:'no-store'})).json();ok=!!j.ok;pn=j.printer||''}catch(e){}finally{clearTimeout(t)}
+ try{await set(R('printServer'),{ts:SNOW(),ok,printer:pn,by:lsg('tg_dev')||'main PC'})}catch(e){}}
+function psStart(){psStop();if(!window.FB||!FB.auth.currentUser)return;
+ if(lsg('tg_ps')=='1'){psBeat();PST=setInterval(psBeat,15000);
+  PSU=onValue(R('printQueue'),s=>{PSJ=s.val()||{};const now=SNOW();Object.values(PSJ).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(x=>{
+   if(x.status=='pending'){if(now-(x.ts||0)>PS_EXPIRE)runTransaction(R('printQueue/'+x.id+'/status'),c=>c=='pending'?'expired':undefined).catch(()=>{});else PSQ=PSQ.then(()=>psRun(x.id))}
+   else if(now-(x.ts||0)>864e5)set(R('printQueue/'+x.id),null).catch(()=>{})})})}
+ else if(lsg('tg_rm')=='1'){
+  /* phone: watch my own jobs (done / failed / expired) and the main PC heartbeat */
+  PSU=onValue(R('printQueue'),s=>{const q=s.val()||{};Object.keys(MYJ).forEach(id=>{const x=q[id];if(!x)return;
+   if(x.status=='done'){toast('✓ Printed '+MYJ[id]+' tag(s) on the main PC');delete MYJ[id]}
+   else if(x.status=='error'){alert('The main PC could not print: '+(x.err||'unknown error')+'\n\nCheck the print helper and printer on the PC, then send again.');delete MYJ[id]}
+   else if(x.status=='expired'){alert('The main PC did not pick up your print job, so it was cancelled.\n\nOn the PC open the Tag Generator and turn Print server ON, then send again.');delete MYJ[id]}})});
+  PSU2=onValue(R('printServer'),s=>{PSS=s.val();hsCheck()});
+  PST=setInterval(()=>hsCheck(),10000)}
+ hsCheck()}
 async function psRun(id){try{const r=await runTransaction(R('printQueue/'+id+'/status'),c=>c=='pending'?'printing':undefined);if(!r.committed)return;
- const j=PSJ[id]||{},l=Object.values(j.tags||{});try{await printLocal(l,1);await update(R('printQueue/'+id),{status:'done',doneAt:Date.now()});toast('Printed '+l.length+' tag(s) sent from '+(j.by||'another device'))}catch(e){await update(R('printQueue/'+id),{status:'error',err:String(e.message||e)});toast('Print failed: '+e.message,1)}}catch(e){}}
+ const j=PSJ[id]||{},l=Object.values(j.tags||{});try{await printLocal(l,1);await update(R('printQueue/'+id),{status:'done',doneAt:SNOW()});toast('Printed '+l.length+' tag(s) sent from '+(j.by||'another device'))}catch(e){await update(R('printQueue/'+id),{status:'error',err:String(e.message||e)});toast('Print failed: '+e.message,1)}}catch(e){}}
 window.tgDev=(k,v)=>{if(k=='name'){lss('tg_dev',v);return}lss('tg_ps',k=='ps'&&v?'1':'0');lss('tg_rm',k=='rm'&&v?'1':'0');psStart();render()};
 function devCard(){const u=window.FB&&FB.auth.currentUser;return`<div class="lysec"><b>This device</b><p class="mut" style="margin:4px 0">Signed in as ${hx(u?u.email:'')} <button onclick="signOutTG()">Sign out</button></p>
- <label><input type="checkbox" style="width:auto" ${lsg('tg_ps')=='1'?'checked':''} onchange="tgDev('ps',this.checked)"> Print server: this PC prints tags sent from other devices (needs the print helper running here)</label><br>
- <label><input type="checkbox" style="width:auto" ${lsg('tg_rm')=='1'?'checked':''} onchange="tgDev('rm',this.checked)"> Send my prints to the main PC (use on phones)</label>
+ <label><input type="checkbox" style="width:auto" ${lsg('tg_ps')=='1'?'checked':''} onchange="tgDev('ps',this.checked)"> Print server: this PC prints tags sent from other devices (keep this Tag Generator tab open and the print helper running here)</label><br>
+ <label><input type="checkbox" style="width:auto" ${lsg('tg_rm')=='1'?'checked':''} onchange="tgDev('rm',this.checked)"> Send my prints to the main PC (use on phones — the top bar then shows if the main PC is ready)</label>
  <div class="grid"><div><label>Device name</label><input value="${hx(lsg('tg_dev')||'')}" placeholder="e.g. Vaibhav phone" onchange="tgDev('name',this.value)"></div></div></div>`}
 window.exportDB=()=>{const o={...S};delete o.printQueue;const x=document.createElement('a');x.href=URL.createObjectURL(new Blob([JSON.stringify({tagsoft:o})],{type:'application/json'}));x.download='tagsoft_backup_'+new Date().toISOString().slice(0,10)+'.json';x.click()};
 window.delAllStock=async()=>{const ks=Object.keys(S.tags||{}).filter(x=>S.tags[x].status!='archived');if(!ks.length)return alert('There is no stock to delete');
@@ -357,7 +372,8 @@ window.lyTest=async()=>{LYD={ci:LYC,lay:JSON.parse(JSON.stringify(LYW))};try{awa
 async function printLocal(l,quiet){const P=S.cfg.prn||{},url=(P.url||'http://localhost:9101')+'/print';
  try{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:new Blob(buildTSPL(l),{type:'text/plain'})});const j=await r.json();if(!j.ok)throw new Error(j.error)}
  catch(e){if(quiet)throw e;if(confirm('Print helper problem: '+e.message+'\n\nPrint with the browser instead?'))printBrowser(l)}}
-async function printTags(l){if(lsg('tg_rm')=='1'){try{const id=crypto.randomUUID();await set(R('printQueue/'+id),{id,status:'pending',ts:Date.now(),by:lsg('tg_dev')||'device',n:l.length,tags:l.map(t=>({...t}))});toast('Sent to the main PC ('+l.length+' tag'+(l.length>1?'s':'')+')')}catch(e){alert('Could not send to the main PC: '+e.message)}return}return printLocal(l)}
+async function printTags(l){if(lsg('tg_rm')=='1'){const a=PSS?SNOW()-(+PSS.ts||0):1e12;if(a>=PS_ONLINE||!PSS.ok){if(!confirm('The main PC does not look ready (Tag Generator closed, Print server off, or printer helper not running).\n\nSend anyway? The job is cancelled if the PC does not pick it up within 10 minutes.'))return}
+ let id;try{id=crypto.randomUUID();MYJ[id]=l.length;await set(R('printQueue/'+id),{id,status:'pending',ts:SNOW(),by:lsg('tg_dev')||'device',n:l.length,tags:l.map(t=>({...t}))});toast('Sent to the main PC ('+l.length+' tag'+(l.length>1?'s':'')+')')}catch(e){if(id)delete MYJ[id];alert('Could not send to the main PC: '+e.message)}return}return printLocal(l)}
 window.rulerPrint=async()=>{const P=S.cfg.prn||{},enc=new TextEncoder(),parts=[],add=t=>parts.push(enc.encode(t)),cur=P.sh??14;
  add(`SIZE 82 mm,12 mm\r\nGAP ${P.gap??3} mm,0 mm\r\nDIRECTION ${P.dir??1}\r\nDENSITY ${P.den??8}\r\nSPEED ${P.spd??3}\r\n`);
  [cur,cur-40,cur+40].forEach(sh=>{add(`SHIFT ${sh}\r\nCLS\r\n`);
@@ -544,7 +560,9 @@ function cbg(c){const i=CATS.indexOf(c);return i<0?hx(c):`<span class="cb c${i}"
 function homeStats(){const l=live();if(!l.length)return'<p class="sub">No tags yet</p>';const nw=a=>a.reduce((s,t)=>s+n(t.nw),0).toFixed(3);
  return`<div class="stats"><div class="stat tot"><small>All tags in stock</small><b>${l.length}</b><span>${nw(l)} g net</span></div>${CATS.map((c,i)=>{const x=l.filter(t=>t.cat==c);return x.length?`<div class="stat"><small>${CSH[i]}</small><b>${x.length}</b><span>${nw(x)} g net</span></div>`:''}).join('')}</div>`}
 let TT=0;function toast(m,bad){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';document.body.appendChild(e)}e.textContent=m;e.className=(bad?'bad ':'')+'on';clearTimeout(TT);TT=setTimeout(()=>e.classList.remove('on'),2200)}
-window.hsCheck=async(manual)=>{const e=document.getElementById('hs');if(!e)return;const u=((S.cfg||{}).prn||{}).url||'http://localhost:9101',c=new AbortController(),t=setTimeout(()=>c.abort(),2500);
+window.hsCheck=async(manual)=>{const e=document.getElementById('hs');if(!e)return;
+ if(lsg('tg_rm')=='1'){const on=PSS&&SNOW()-(+PSS.ts||0)<PS_ONLINE,ok=on&&PSS.ok;e.className='hs '+(ok?'on':'off');e.lastChild.textContent=!on?'Main PC offline':ok?'Main PC ready':'PC printer off';if(manual)toast(!on?'Main PC is offline — open the Tag Generator there and turn Print server ON':ok?'✓ Main PC ready'+(PSS.printer?' — '+PSS.printer:''):'Main PC is on, but its print helper / printer is not responding',!ok);return}
+const u=((S.cfg||{}).prn||{}).url||'http://localhost:9101',c=new AbortController(),t=setTimeout(()=>c.abort(),2500);
  try{const j=await(await fetch(u+'/ping',{signal:c.signal,cache:'no-store'})).json();e.className='hs on';e.lastChild.textContent='Printer ready';if(manual)toast('✓ Print helper OK — '+j.printer)}
  catch(x){e.className='hs off';e.lastChild.textContent='Printer offline';if(manual)toast('Print helper not reachable — start it on the main PC',1)}finally{clearTimeout(t)}};
 setTimeout(hsCheck,600);setInterval(hsCheck,20000);
