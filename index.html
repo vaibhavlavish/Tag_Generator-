@@ -139,6 +139,7 @@ body{min-height:100vh;min-height:100dvh;background:var(--bg)}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#2a2118;z-index:99999;pointer-events:none}
 @media print{body::before{display:none}}
 header b{cursor:pointer;-webkit-user-select:none;user-select:none}
+.abw{font-size:12px;font-weight:600;color:#fff;background:#b3362f;border-radius:999px;padding:5px 11px;cursor:pointer;white-space:nowrap}
 /* Stock search/filter: toggle button exists on phones only */
 .fbtog{display:none}
 @media(max-width:760px){
@@ -150,7 +151,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 }
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
-<header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="go('home')" onkeydown="if(event.key=='Enter')go('home')">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
+<header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="go('home')" onkeydown="if(event.key=='Enter')go('home')">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
 <main id="app"></main><div id="lbl"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -185,7 +186,7 @@ let LOFF=0;function localOffer(){if(LOFF)return;LOFF=1;let o;try{o=JSON.parse(ls
  if(!confirm('This browser still holds data saved before the cloud connection ('+Object.keys(t.tags||{}).length+' tags, '+Object.keys(t.items||{}).length+' items).\n\nUpload it to the cloud now?'))return;
  cloudRestore(t).then(()=>toast('Uploaded to the cloud')).catch(e=>alert('Upload failed: '+e.message))}
 window.boot=()=>{LSIG='';if(!window._cn){window._cn=1;FB.onValue(FB.ref(FB.db,'.info/connected'),s=>{CONN=!!s.val();document.body.classList.toggle('off',!CONN)});FB.onValue(FB.ref(FB.db,'.info/serverTimeOffset'),s=>{SKEW=+s.val()||0})}
- if(UNSUB)UNSUB();UNSUB=onValue(R(''),s=>{const v=s.val()||{};delete v.printQueue;delete v.printServer;const sg=JSON.stringify(v);if(sg===LSIG)return;LSIG=sg;normCloud(v);S=Object.assign({stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},v);verCheck();render();localOffer();if(!PSU&&!PSU2)psStart()})};
+ if(UNSUB)UNSUB();UNSUB=onValue(R(''),s=>{const v=s.val()||{};delete v.printQueue;delete v.printServer;const sg=JSON.stringify(v);if(sg===LSIG)return;LSIG=sg;normCloud(v);S=Object.assign({stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},v);verCheck();render();localOffer();suppSeed();if(!PSU&&!PSU2)psStart()})};
 /* ---- sign-in (same email + password as the POS) ---- */
 function loginUI(msg){$('#app').innerHTML=`<div class="card" style="max-width:360px;margin:40px auto"><h3>Sign in</h3><p class="mut">Use the same email and password as the POS.</p><label>Email</label><input id="lge" type="email" autocomplete="username"><label>Password</label><input id="lgp" type="password" autocomplete="current-password" onkeydown="if(event.key=='Enter')lgGo()"><p id="lgm" style="color:#b00">${msg||''}</p><div class="bar"><button class="p" onclick="lgGo()">Sign in</button></div></div>`}
 window.lgGo=()=>{FB.signIn(FB.auth,$('#lge').value.trim(),$('#lgp').value).catch(e=>{$('#lgm').textContent=e.code=='auth/network-request-failed'?'No internet connection.':'Sign-in failed. Check email and password. ('+(e.code||e.message)+')'})};
@@ -216,6 +217,63 @@ function psStart(){psStop();if(!window.FB||!FB.auth.currentUser)return;
  hsCheck()}
 async function psRun(id){try{const r=await runTransaction(R('printQueue/'+id+'/status'),c=>c=='pending'?'printing':undefined);if(!r.committed)return;
  const j=PSJ[id]||{},l=Object.values(j.tags||{});try{await printLocal(l,1);await update(R('printQueue/'+id),{status:'done',doneAt:SNOW()});toast('Printed '+l.length+' tag(s) sent from '+(j.by||'another device'))}catch(e){await update(R('printQueue/'+id),{status:'error',err:String(e.message||e)});toast('Print failed: '+e.message,1)}}catch(e){}}
+/* ---- Suppliers: list kept in Setting; suppliers already on existing tags are added automatically (once) ---- */
+const supKey=s=>k(String(s).trim().replace(/\s+/g,' ').toLowerCase());
+const suppNames=()=>Object.values(S.suppliers||{}).map(x=>x&&x.name).filter(Boolean).sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+let SSEED=0;
+function suppSeed(){if(SSEED||(S.cfg||{}).suppSeeded||!CONN||!ORIGIN_OK||!WRITE_OK||!window.FB||!FB.auth.currentUser)return;SSEED=1;
+ const ex=S.suppliers||{},b={};
+ Object.values(S.tags||{}).forEach(g=>{const nm=String(g.supplier||'').trim().replace(/\s+/g,' ');if(!nm)return;const q=supKey(nm);if(!ex[q]&&!b['suppliers/'+q])b['suppliers/'+q]={name:nm}});
+ b['cfg/suppSeeded']=1;update(R(''),b).catch(()=>{SSEED=0})}
+window.addSup=async()=>{const e=$('#spn'),nm=e?e.value.trim().replace(/\s+/g,' '):'';if(!nm)return;const q=supKey(nm);if((S.suppliers||{})[q]){toast('Already in the list',1);return}await set(R('suppliers/'+q),{name:nm});toast('✓ Supplier added')};
+function suppliersUI(){const cnt={};live().forEach(g=>{const x=String(g.supplier||'').trim();if(x){const q=supKey(x);cnt[q]=(cnt[q]||0)+1}});
+ const rows=Object.entries(S.suppliers||{}).map(([key,s])=>({key,name:(s&&s.name)||key})).sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+ return`<div class="bar"><input id="spn" style="flex:1;min-width:150px" placeholder="Supplier name" autocomplete="off" onkeydown="if(event.key=='Enter')addSup()"><button class="p" onclick="addSup()">Add</button></div><p class="mut" style="margin:0">Suppliers already used on existing tags are added here automatically. Choose a supplier from this list when making or editing a tag.</p>${rows.length?`<table>${rows.map(r=>`<tr><td>${hx(r.name)}</td><td class="mut">${cnt[r.key]||0} tag${cnt[r.key]==1?'':'s'}</td><td><button class="d" data-k="${hx(r.key)}" onclick="rm('suppliers',this.dataset.k)">✕</button></td></tr>`).join('')}</table>`:'<p class="empty">No suppliers yet — add one above.</p>'}`}
+/* ---- Auto backup to a folder (File System Access API: Chrome / Edge on a computer). Same idea as the POS. ---- */
+const AB_KEEP=30,AB_RE=/^tagsoft_backup_\d{4}-\d{2}-\d{2}_\d{4}\.json$/; /* newest 30 backup files are kept in the folder; only files with this exact name pattern are ever deleted */
+const abDb=()=>new Promise((ok,no)=>{const r=indexedDB.open('tagsoftAutoBackupDB',1);r.onupgradeneeded=()=>r.result.createObjectStore('handles');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const abGet=async key=>{const d=await abDb();return new Promise((ok,no)=>{const q=d.transaction('handles','readonly').objectStore('handles').get(key);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>no(q.error)})};
+const abPut=async(key,v)=>{const d=await abDb();return new Promise((ok,no)=>{const x=d.transaction('handles','readwrite');x.objectStore('handles').put(v,key);x.oncomplete=()=>ok(1);x.onerror=()=>no(x.error)})};
+const abTimes=()=>{try{const r=JSON.parse(lsg('tg_ab_times')||'null');if(Array.isArray(r))return r}catch(e){}return['00:00','19:00']}; /* default 12 AM and 7 PM, like the POS */
+const abLog=()=>{try{const r=JSON.parse(lsg('tg_ab_log')||'null');if(r&&r.date)return r}catch(e){}return{date:'',done:[]}};
+const pad2=x=>String(x).padStart(2,'0'),abDay=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const abFmt=s=>{const[h,m]=s.split(':').map(Number);return((h%12)||12)+':'+pad2(m)+' '+(h<12?'AM':'PM')};
+async function abHandle(ask){const h=await abGet('dir').catch(()=>null);if(!h)return null;try{if(await h.queryPermission({mode:'readwrite'})=='granted')return h;if(ask&&await h.requestPermission({mode:'readwrite'})=='granted')return h}catch(e){}return null}
+function abData(){const o={...S};delete o.printQueue;delete o.printServer;return{tagsoft:o,savedAt:new Date().toISOString(),app:'tag_generator',ver:TG_VER}} /* same shape as Export backup, so Restore reads it */
+window.abChoose=async()=>{if(!window.showDirectoryPicker){alert('This browser cannot save to a folder. Use Chrome or Edge on the computer.');return}
+ try{const h=await showDirectoryPicker({mode:'readwrite'});await abPut('dir',h);toast('✓ Backup folder: '+h.name);abStatus();abWarn()}catch(e){if(e.name!='AbortError')alert('Could not use that folder: '+e.message)}};
+async function abRun(manual){const h=await abHandle(!!manual);
+ if(!h){if(manual)alert('The backup folder is not connected, or the browser needs your permission again.\n\nChoose the folder again (or tap Backup now once more) to reconnect.');abStatus('⚠ Folder not connected — reconnect it here.');abWarn();return false}
+ if(!Object.keys(S.tags||{}).length&&!Object.keys(S.items||{}).length){if(manual)alert('There is no data to back up yet.');return false}
+ try{const d=new Date(),name='tagsoft_backup_'+abDay(d)+'_'+pad2(d.getHours())+pad2(d.getMinutes())+'.json';
+  const fh=await h.getFileHandle(name,{create:true}),w=await fh.createWritable();await w.write(JSON.stringify(abData()));await w.close();
+  lss('tg_ab_last',d.toISOString());
+  try{const nm=[];for await(const[x]of h.entries())if(AB_RE.test(x))nm.push(x);nm.sort();for(const x of nm.slice(0,Math.max(0,nm.length-AB_KEEP)))await h.removeEntry(x)}catch(e){}
+  abStatus();abWarn();if(manual)toast('✓ Backup saved: '+name);return true}
+ catch(e){if(manual)alert('Backup failed: '+e.message);abStatus('⚠ Last backup failed: '+e.message);return false}}
+/* every minute: run any scheduled time that has passed; also catches up a slot missed while the app/PC was off */
+async function abCheck(){if(!LSIG)return;const h=await abHandle(false);if(!h)return;const ts=abTimes().slice().sort();if(!ts.length)return;
+ const d=new Date(),today=abDay(d);let log=abLog();if(log.date!==today)log={date:today,done:[]};
+ const hm=pad2(d.getHours())+':'+pad2(d.getMinutes()),due=ts.filter(x=>x<=hm&&!log.done.includes(x));if(!due.length)return;
+ if(await abRun(false)){due.forEach(x=>log.done.push(x));lss('tg_ab_log',JSON.stringify(log))}}
+async function abWarn(){const e=document.getElementById('abw');if(!e)return;const h=await abGet('dir').catch(()=>null);if(!h||!abTimes().length){e.style.display='none';return}
+ let ok=false;try{ok=(await h.queryPermission({mode:'readwrite'}))=='granted'}catch(x){}const last=lsg('tg_ab_last'),hrs=last?(Date.now()-new Date(last))/36e5:1e9;
+ if(!ok){e.textContent='⚠ Backup: reconnect';e.style.display=''}else if(hrs>30){e.textContent='⚠ Backup is old';e.style.display=''}else e.style.display='none'}
+async function abStatus(msg){const f=document.getElementById('abfol'),l=document.getElementById('ablast');if(!f&&!l)return;const h=await abGet('dir').catch(()=>null);
+ if(f)f.textContent=!window.showDirectoryPicker?'This browser cannot save to a folder — use Chrome or Edge on the computer.':h?'Folder: '+h.name+((await abHandle(false))?'  ✓ connected':'  — needs permission: tap Backup now'):'No folder chosen yet.';
+ if(l){const x=lsg('tg_ab_last');l.textContent=msg||(x?'Last backup: '+new Date(x).toLocaleString():'No backup has run yet.')}}
+window.abAdd=()=>{const e=$('#abt');if(!e||!e.value)return;const ts=abTimes();if(!ts.includes(e.value))ts.push(e.value);lss('tg_ab_times',JSON.stringify(ts.sort()));render()};
+window.abDel=x=>{lss('tg_ab_times',JSON.stringify(abTimes().filter(y=>y!=x)));render()};
+function backupUI(){const ts=abTimes().slice().sort();
+ return`<p class="mut" style="margin:0 0 8px">Saves a full copy of all Tag Generator data into a folder on this computer. Pick a Google Drive / OneDrive synced folder to keep it online too. Works in Chrome or Edge on a computer — set it up on the main PC.</p>
+ <div class="bar"><button class="p" onclick="abChoose()">Choose folder</button><button onclick="abRun(true)">Backup now</button></div>
+ <p id="abfol" style="margin:4px 0"></p><p id="ablast" class="mut" style="margin:4px 0"></p>
+ <div class="sh" style="margin-top:14px">Schedule</div>
+ <div class="bar"><input type="time" id="abt" style="width:auto"><button onclick="abAdd()">Add time</button></div>
+ <div class="chips">${ts.length?ts.map(x=>`<span class="chip">${abFmt(x)} <b style="cursor:pointer;color:var(--red);margin-left:6px" data-t="${x}" onclick="abDel(this.dataset.t)">✕</b></span>`).join(''):'<span class="mut">No times set — automatic backup is off. Backup now still works.</span>'}</div>
+ <p class="mut" style="margin-top:8px">Runs at these times while the app is open. If the PC was off at a scheduled time, it runs once when the app is opened. The newest ${AB_KEEP} backups are kept in the folder; older ones are removed. To restore, use Setting → Print → Restore.</p>`}
+setTimeout(abCheck,6000);setInterval(abCheck,60000);setTimeout(abWarn,3000);setInterval(abWarn,300000);
+window.abOpen=()=>{go('settings');sub='backup';render()};
 window.refreshApp=async()=>{toast('Refreshing…');try{if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.update().catch(()=>{})))}}catch(e){}
  const u=new URL(location.href);u.searchParams.set('r',Date.now());location.replace(u.toString())};
 window.tgDev=(k,v)=>{if(k=='name'){lss('tg_dev',v);return}lss('tg_ps',k=='ps'&&v?'1':'0');lss('tg_rm',k=='rm'&&v?'1':'0');psStart();render()};
@@ -233,14 +291,14 @@ window.delAllStock=async()=>{const ks=Object.keys(S.tags||{}).filter(x=>S.tags[x
 window.importDB=async()=>{const f=$('#jf').files[0];if(!f||!confirm('Replace ALL data with this backup?\n\nA backup of the current data downloads first.'))return;const j=JSON.parse(await f.text());exportDB();await new Promise(r=>setTimeout(r,800));await set(R('tags'),null);await cloudRestore(j.tagsoft||j);toast('Backup restored')};
 const $=s=>document.querySelector(s),k=s=>String(s).replace(/[.$#\[\]\/]/g,'_'),n=v=>parseFloat(v)||0;
 const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CSH=['Gold','Silver','925 Silver'];const stC=x=>x.cats||(x.cat?[x.cat]:[]);
-let S={stamps:{},designs:{},items:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
+let S={stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
 let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
 
 window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;vou=null;F={cat:CATS[0]};editing=null}render()};
 const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
 const vous=()=>[...new Set([...live().map(t=>+t.vou),...Object.keys(S.cfg.vous||{}).map(Number)])].filter(Boolean).sort((a,b)=>a-b);
 const maxVou=()=>Math.max(0,...Object.values(S.tags).map(t=>+t.vou||0),...Object.keys(S.cfg.vous||{}).map(Number));
-const FIELDS=[['cat','Category','sel'],['item','Item','sel'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp','sel'],['size','Size'],['design','Design','sel'],['tunch','Tunch'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['lab','Labour /g'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier']];
+const FIELDS=[['cat','Category','sel'],['item','Item','sel'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp','sel'],['size','Size'],['design','Design','sel'],['tunch','Tunch'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['lab','Labour /g'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier','sel']];
 const MG={s:{f:['sw','sp','swt','srs'],l:['S/wstg','S/%','S/wt','S/Rs'],t:'Sale making'},p:{f:['pw','pp','pwt','prs'],l:['P/wstg','P/%','P/wt','P/Rs'],t:'Purchase making'}},MGS=['pw','pp','pwt','prs','sw','sp','swt','srs'],MGK={pw:'p',sw:'s'};let MT={s:'sp',p:'pw'};
 const mgO=c=>c=='F'?F:ME.f,mgT=(g,o)=>MG[g].f.find(x=>n(o[x]))||MT[g];
 function mgHtml(g,c){const m=MG[g],o=mgO(c),t=mgT(g,o);return`<div id="mg-${g}${c=='F'?'':'m'}" style="grid-column:span 2"><label>${m.t}</label><div class="mgr"><select class="mgs" onchange="mgS('${g}','${c}',this.value)">${m.f.map((x,i)=>`<option value="${x}" ${x==t?'selected':''}>${m.l[i]}</option>`).join('')}</select><input class="mgv" inputmode="decimal" value="${hx(o[t]??'')}" oninput="mgV('${g}','${c}',this.value)"></div></div>`}
@@ -250,12 +308,13 @@ function mgSync(){['s','p'].forEach(g=>{const e=$('#mg-'+g);if(!e)return;const t
 function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='item')return Object.values(S.items).filter(i=>i.cat==c).map(i=>i.name).sort();
  if(f=='stamp')return Object.values(S.stamps).filter(s=>stC(s).includes(c)).map(s=>s.name);
+ if(f=='supplier')return suppNames();
  if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
-function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, layout, printer']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
+function render(){const a=$('#app');if(view=='home')a.innerHTML=`${homeStats()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
  else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else entry(a)}
 function entry(a){const vl=vous();if(vou==null)vou=vl.length?vl[vl.length-1]:maxVou()+1;
  const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
- const fh=([f,l,t])=>{if(MGS.includes(f))return MGK[f]?mgHtml(MGK[f],'F'):'';const o=t=='sel'?opts(f):null;const v=F[f]??'';
+ const fh=([f,l,t])=>{if(MGS.includes(f))return MGK[f]?mgHtml(MGK[f],'F'):'';const o=t=='sel'?opts(f):null;const v=F[f]??'';if(o&&f=='supplier'&&v&&!o.includes(v))o.push(v);
  return`<div><label>${l}</label>${o?`<select data-f="${f}">${f=='cat'?'':'<option value="">'+(o.length?'':'— none: add in Setting —')+'</option>'}${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-f="${f}" value="${v}" ${f=='nw'?'readonly':''} oninput="sv('${f}',this.value,1)">`}</div>`};
  if(!editing&&!n(F.pcs))F.pcs='1';
  const fl=l=>l.map(f=>fh(FIELDS.find(x=>x[0]==f))).join('');
@@ -445,6 +504,7 @@ function stMo(){const t=ME.o,f=ME.f;
  const it=S.items[k(f.item||t.item||'')],dsg=[...new Set([...(it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(t.cat)).map(d=>d.name)),...(t.design?[t.design]:[])])];
  const inp=FIELDS.filter(([x])=>x!='cat'&&x!='item').map(([x,l])=>{if(MGS.includes(x))return MGK[x]?mgHtml(MGK[x],'M'):'';const v=f[x]??'';
   if(x=='stamp'||x=='design'){const o=x=='stamp'?stp:dsg;return`<div><label>${l}</label><select data-m="${x}" onchange="ME.f.${x}=this.value"><option value=""></option>${o.map(y=>`<option value="${hx(y)}" ${y==v?'selected':''}>${hx(y)}</option>`).join('')}</select></div>`}
+  if(x=='supplier'){const o=[...new Set([...suppNames(),...(v?[v]:[])])];return`<div><label>${l}</label><select data-m="${x}" onchange="ME.f.${x}=this.value"><option value=""></option>${o.map(y=>`<option value="${hx(y)}" ${y==v?'selected':''}>${hx(y)}</option>`).join('')}</select></div>`}
   return`<div><label>${l}</label><input data-m="${x}" value="${hx(v)}" ${x=='nw'?'readonly':''} oninput="stMi('${x}',this.value)"></div>`}).join('');
  let m=$('#mo');if(!m){m=document.createElement('div');m.id='mo';m.className='mo';document.body.appendChild(m)}
  m.innerHTML=`<div class="md"><div class="mh"><div><h3 style="margin:0">Edit tag ${hx(t.tagNo)}</h3><span class="mut">${hx(t.item)} · ${hx(t.cat)}</span></div><button onclick="stMc()">✕</button></div><div class="grid"><div style="grid-column:span 2"><label>Item (changing gives a new tag number)</label><select onchange="ME.f.item=this.value;ME.f.design='';stMo()">${[...new Set([t.item,...Object.values(S.items).filter(i=>i.cat==t.cat).map(i=>i.name)])].map(x=>`<option value="${hx(x)}" ${x==(f.item||t.item)?'selected':''}>${hx(x)}</option>`).join('')}</select></div>${inp}</div><div class="bar mf"><button class="p" onclick="stMs(0)">Save</button><button onclick="stMs(1)">Save + Print</button><button onclick="stMc()">Cancel</button><span style="flex:1"></span><button class="d" onclick="stMd()">Delete tag</button></div></div>`}
@@ -491,11 +551,13 @@ function settings(a){const tb=['stamps','designs','items','layout','print'].map(
  if(sub=='stamps')h=`<div class="bar"><input id="sn" placeholder="Stamp name"></div><div class="bar">${CATS.map(c=>`<label><input type="checkbox" class="sck" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addS()">Add</button></div><p class="mut" style="margin:0">Tick every category the stamp belongs to. Adding an existing stamp again adds the ticked categories to it.</p><table>${Object.values(S.stamps).map(s=>`<tr><td>${s.name}</td><td>${stC(s).map(cbg).join(' ')}</td><td><button class="d" onclick="rm('stamps','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.stamps).length?'':'<p class="empty">No stamps yet — add one above.</p>'}`;
  if(sub=='designs')h=`<div class="bar"><input id="dn" placeholder="Design name"></div><div class="bar">${CATS.map((c,i)=>`<label><input type="checkbox" class="dc" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addD()">Add</button></div><table>${Object.values(S.designs).map(s=>`<tr><td>${s.name}</td><td>${(s.cats||[]).join(', ')}</td><td><button class="d" onclick="rm('designs','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.designs).length?'':'<p class="empty">No designs yet — add one above.</p>'}`;
  if(sub=='items')h=itemsUI();
+ if(sub=='suppliers')h=suppliersUI();
+ if(sub=='backup')h=backupUI();
  if(sub=='layout')h=layoutUI();
  if(sub=='print'){const c=S.cfg.nudge||{x:0,y:0};h=devCard()+`<div class="grid"><div><label>Nudge X (mm)</label><input id="nx" value="${c.x}"></div><div><label>Nudge Y (mm)</label><input id="ny" value="${c.y}"></div><div><label>Helper URL</label><input id="pu" value="${(S.cfg.prn||{}).url||'http://localhost:9101'}"></div><div><label>Gap (mm)</label><input id="pg" value="${(S.cfg.prn||{}).gap??3}"></div><div><label>Direction (0/1)</label><input id="pd" value="${(S.cfg.prn||{}).dir??1}"></div><div><label>Font</label><input id="pf" value="${(S.cfg.prn||{}).font||'Cambria'}"></div><div><label>Text size (dots)</label><input id="pz" value="${(S.cfg.prn||{}).px||19}"></div><div><label>Invert bitmap (0/1)</label><input id="pi" value="${(S.cfg.prn||{}).inv||0}"></div><div><label>Shift up/down (dots)</label><input id="psh" value="${(S.cfg.prn||{}).sh??14}"></div><div><label>Darkness (0-15)</label><input id="pk" value="${(S.cfg.prn||{}).den??8}"></div><div><label>Speed (1-5)</label><input id="ps" value="${(S.cfg.prn||{}).spd??3}"></div></div><div class="bar"><button class="p" onclick="saveN()">Save</button><button onclick="pingHelper()">Check helper</button><button onclick="rulerPrint()">Ruler test</button><button onclick="verifyLayout()">Verify layout</button><button onclick="printTags([{cat:CATS[0],tagNo:'GRG1',gw:1,nw:1,size:'10',stamp:'18K',name:'TEST'}])">Test print</button></div><div class="card"><b>Backup</b><div class="bar"><button onclick="exportDB()">Export backup</button><input type="file" id="jf" accept=".json" style="width:auto"><button onclick="importDB()">Restore</button></div></div><div class="card"><b>Import product_data.xlsx</b><br><input type="file" id="xf" accept=".xlsx"><div class="bar"><button class="p" onclick="imp()">Import</button><span id="ist"></span></div></div><div class="card" style="border-color:#e4b7b3"><b style="color:var(--red)">Delete all stock</b><p class="mut" style="margin:4px 0 8px">Removes every tag from stock so you can enter or import them again. A full backup file downloads first. Items, stamps, designs, layout, settings and next-number counters are kept.</p><button class="d" onclick="delAllStock()">Delete all stock…</button></div>`}
- const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making presets'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import']};
+ const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making presets'],suppliers:['🏭','Suppliers','Supplier list used on tags'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import'],backup:['💾','Auto Backup','Save a copy to a folder on a schedule']};
  if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}<div class="tile" tabindex="0" role="button" onclick="refreshApp()" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">🔄</span><span><b>Refresh</b><small>Reload the app to get the latest version and data</small></span></div></div>`;return}
- a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv()}
+ a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv();if(sub=='backup')abStatus()}
 window.CATS=CATS;window.printTags=printTags;window.rm=async(p,key)=>{if(confirm('Remove?'))await set(R(p+'/'+key),null)};
 window.addS=()=>{const v=$('#sn').value.trim(),c=[...document.querySelectorAll('.sck:checked')].map(x=>x.value);if(!v||!c.length)return alert('Enter a stamp name and tick at least one category');const o=S.stamps[k(v)],m=[...new Set([...(o?stC(o):[]),...c])];set(R('stamps/'+k(v)),{name:o?o.name:v,cats:m})};
 window.addD=()=>{const v=$('#dn').value.trim(),c=[...document.querySelectorAll('.dc:checked')].map(x=>x.value);if(v&&c.length)set(R('designs/'+k(v)),{name:v,cats:c})};
@@ -511,7 +573,7 @@ window.tg=(d,c)=>{IE.designs=IE.designs||[];c?IE.designs.push(d):IE.designs=IE.d
 window.saveI=async()=>{if(!IE)return;IE.name=(IE.name||'').trim();IE.prefix=(IE.prefix||'').trim();if(!IE.name||!IE.prefix)return alert('Name and prefix required');const dup=Object.values(S.items).find(i=>i.prefix==IE.prefix&&i.name!=IE.name);if(dup)return alert('Prefix already used by '+dup.name);const old=S.items[k(IE.name)];if(old&&old.prefix&&old.prefix!=IE.prefix&&!confirm('Prefix changes from '+old.prefix+' to '+IE.prefix+'.\n\nNew tags of this item will use '+IE.prefix+'. Tags already made keep their numbers.'))return;IE.rules=IE.rules||[];await set(R('items/'+k(IE.name)),IE);toast('✓ Item saved');IE=null};
 window.imp=async()=>{const f=$('#xf').files[0];if(!f)return;const rows=XLSX.utils.sheet_to_json(XLSX.read(await f.arrayBuffer()).Sheets.Sheet1,{defval:'',raw:false});const st=$('#ist');
  const catOf=r=>/^925/.test(r['Item Name'])||r.Stamp=='S925'?CATS[2]:(r.Stamp=='S7'||/^S /.test(r['Item Name']))?CATS[1]:CATS[0];
- const items={},stamps={},designs={},tags={},cnt={},bad=[];
+ const items={},stamps={},designs={},tags={},cnt={},bad=[],supMap={};
  rows.forEach(r=>{const m=String(r['Tag No']).match(/^(\d*[A-Z]+)(\d+)$/);if(!m)return;const cat=catOf(r),nm=r['Item Name'];
  const it=items[k(nm)]=items[k(nm)]||{name:nm,cat,prefix:'',printName:nm,letter:'',designs:[],rules:[],_p:{}};it._p[m[1]]=(it._p[m[1]]||0)+1;
  if(r.Stamp){const sx=stamps[k(r.Stamp)]=stamps[k(r.Stamp)]||{name:r.Stamp,cats:[]};if(!sx.cats.includes(cat))sx.cats.push(cat)}if(r.Design){const d=designs[k(r.Design)]=designs[k(r.Design)]||{name:r.Design,cats:[]};if(!d.cats.includes(cat))d.cats.push(cat);if(!it.designs.includes(r.Design))it.designs.push(r.Design)}
@@ -519,12 +581,12 @@ window.imp=async()=>{const f=$('#xf').files[0];if(!f)return;const rows=XLSX.util
  const w=n(r['Making (per g)']),mk=n(r['Making (%)']),pc=n(r['Making (per pc)']);
  const sus=n(r.Wstg)>=40&&!n(r.Tunch);if(sus)bad.push(r['Tag No']);
  const pq=[r.Pcs,r['Pcs.'],r.Pc,r['Pc.']].find(v=>v!==undefined&&v!==''),pqs=pq==null?'':String(pq);
- const sk_=Object.keys(r).find(x=>/^(supplier|party|karigar)/i.test(x)),sup=sk_?String(r[sk_]).trim():'';
+ const sk_=Object.keys(r).find(x=>/^(supplier|party|karigar)/i.test(x)),sup=sk_?String(r[sk_]).trim():'';if(sup){const q=supKey(sup);if(!supMap[q])supMap[q]={name:sup.replace(/\s+/g,' ')}}
  tags[r['Tag No']]={supplier:sup,pcs:pqs||'1',_pq:pqs,tunch:r.Tunch||'',pw:sus?'':(r.Wstg||''),lab:r['Lbr.']||'',tagNo:r['Tag No'],cat,item:nm,name:nm,letter:'',gw:r['Gr. Wt.'],nw:r['N. Wt.'],less:(n(r['Gr. Wt.'])-n(r['N. Wt.'])).toFixed(3),stamp:r.Stamp,size:r.Size,design:r.Design,huid:r.HUID,mrp:r.MRP,sp:r['Making (%)'],sw:r['Wastage (%)'],swt:r['Making (per g)'],srs:r['Making (per pc)'],vou:+r['Vou No.'],vtype:r['Vou Type'],ts:0,status:'live',printed:1}});
  Object.values(items).forEach(i=>{i.prefix=Object.entries(i._p).sort((a,b)=>b[1]-a[1])[0][0];i.legacyPrefixes=Object.keys(i._p);delete i._p});
  st.textContent='Writing '+Object.keys(tags).length+' tags…';
  const ck={};Object.entries(cnt).forEach(([p,v])=>ck[k(p)]=Math.max(v,+(S.counters||{})[k(p)]||0));
- await update(R(''),{stamps:{...stamps,...S.stamps},designs:{...designs,...S.designs},items:{...items,...S.items}});await update(R('counters'),ck);const ks=Object.keys(tags).filter(x=>!S.tags[x]),sk=Object.keys(tags).length-ks.length;
+ await update(R(''),{stamps:{...stamps,...S.stamps},designs:{...designs,...S.designs},items:{...items,...S.items},suppliers:{...supMap,...(S.suppliers||{})}});await update(R('counters'),ck);const ks=Object.keys(tags).filter(x=>!S.tags[x]),sk=Object.keys(tags).length-ks.length;
  for(let i=0;i<ks.length;i+=500){const b={};ks.slice(i,i+500).forEach(x=>{const{_pq,...q}=tags[x];b['tags/'+x]=q});await update(R(''),b)}
  const fl=[];Object.keys(tags).filter(x=>S.tags[x]).forEach(x=>['tunch','pw','lab','pcs','supplier'].forEach(f=>{if(f=='pcs'?tags[x]._pq!=='':tags[x][f]!=='')if((S.tags[x][f]==null||S.tags[x][f]===''))fl.push(['tags/'+x+'/'+f,tags[x][f]])}));
  for(let i=0;i<fl.length;i+=1000)await update(R(''),Object.fromEntries(fl.slice(i,i+1000)));const flt=new Set(fl.map(a=>a[0].split('/')[1])).size;
