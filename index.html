@@ -449,7 +449,10 @@ function printBrowser(l){l=l.map(liveTag);const c=S.cfg.nudge||{x:0,y:0};const o
  ${!gold&&t.letter?`<div style="${o(50,0.1)};font-size:${B+1.5}pt">${t.letter}</div>`:''}</div>`}).join('');setTimeout(()=>window.print(),150)}
 
 /* ---- TSPL printing via local helper: barcode = printer command, text = 1-bit bitmap in any font (default Cambria) ---- */
-function paintItems(g,items,fam){g.textBaseline='top';g.fillStyle='#000';items.forEach(it=>{const parts=it.parts||[{t:it.s,dx:it.dx||0}];if(it.pre){parts.unshift({t:it.pre,dx:0})}let px=it.px;const f=()=>g.font=`bold ${px}px ${fam},serif`;f();const W2=()=>parts.reduce((a,q)=>a+q.dx+g.measureText(q.t).width,0);while(it.maxw&&W2()>it.maxw&&px>11){px--;f()}let x=it.x;parts.forEach(q=>{x+=q.dx;g.fillText(q.t,x,it.y);x+=g.measureText(q.t).width})})}
+function paintItems(g,items,fam){g.textBaseline='top';g.fillStyle='#000';items.forEach(it=>{const parts=it.parts||[{t:it.s,dx:it.dx||0}];if(it.pre){parts.unshift({t:it.pre,dx:0})}let sh=0;
+ /* font of a piece of text: its own (q) -> else the line's (it) -> else the global font; bold unless switched off; size shrinks together when the line is too wide */
+ const fo=q=>`${(q.b===0||(q.b===undefined&&it.b===0))?'normal':'bold'} ${(q.px||it.px)-sh}px ${q.fam||it.fam||fam},serif`,wid=q=>{g.font=fo(q);return g.measureText(q.t).width},W2=()=>parts.reduce((a,q)=>a+q.dx+wid(q),0);
+ while(it.maxw&&W2()>it.maxw&&it.px-sh>11)sh++;let x=it.x;parts.forEach(q=>{x+=q.dx;g.font=fo(q);g.fillText(q.t,x,it.y);x+=g.measureText(q.t).width})})}
 function textBmp(items){const W=448,H=96,P=S.cfg.prn||{},fam=P.font||'Cambria',cv=document.createElement('canvas');cv.width=W;cv.height=H;
  const g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);paintItems(g,items,fam);
  const d=g.getImageData(0,0,W,H).data,wb=W/8,inv=P.inv?1:0,out=new Uint8Array(wb*H).fill(inv?0:255);
@@ -474,14 +477,15 @@ function layoutItems(t,B,P,lay){t=liveTag(t);lay=lay||getLay(catI(t));const bar=
  const resv=(si,ri)=>ri<2&&((bar.side=='R'&&si>=2)||(bar.side=='L'&&si<2));
  lay.secs.forEach((s,si)=>{const cells=[];let pos=0;s.rows.forEach((c,ri)=>{if(resv(si,ri))return;if(!c||!c.f){pos++;return}const v=fval(t,c.f,c.d);if(v==='')return;cells.push({ri,pos:pos++,c,txt:(c.c||'')+v})});
   const nn=cells.length;if(!nn)return;
-  const dense=nn>(s.dn||3),px=B+(s.fp||0)-(dense?(s.fd||0):0);let sp=dense&&s.pd?s.pd:(s.p||23);
+  const dense=nn>(s.dn||3),px=((+s.sz>0)?+s.sz:B+(s.fp||0))-(dense?(s.fd||0):0); /* section size: its own Size if set, else global size (+ old 'Font +' value if any) */let sp=dense&&s.pd?s.pd:(s.p||23);
   const last=cells[nn-1].pos;if(s.safe&&last>0)sp=Math.min(sp,Math.floor((s.safe-px-s.y0)/last));
-  cells.forEach((q,k)=>{let y=s.y0+sp*q.pos;if(s.lim)y=Math.min(y,s.lim-px);
-   const it={x:s.x,y,px,maxw:s.w||0,parts:[{t:q.txt,dx:0}]};lines[si][q.ri]=it;
+  cells.forEach((q,k)=>{const own=+q.c.px>0?Math.round(+q.c.px):0,lp=own||px,ff=s.fam,bb=s.b; /* line font/size/bold: the line's own, else the section's, else global */
+   let y=s.y0+sp*q.pos;if(s.lim)y=Math.min(y,s.lim-lp);
+   const it={x:s.x,y,px:lp,maxw:s.w||0,parts:[{t:q.txt,dx:0}]};if(ff)it.fam=ff;if(bb===0)it.b=0;lines[si][q.ri]=it;
    const pv=si>0&&q.c.j?lines[si-1][q.ri]:null;
-   if(pv){pv.parts[pv.parts.length-1].t+=' ';pv.parts.push({t:q.txt,dx:q.c.g||0});return}
+   if(pv){pv.parts[pv.parts.length-1].t+=' ';const pp={t:q.txt,dx:q.c.g||0};if(own||+s.sz>0)pp.px=lp;if(ff)pp.fam=ff;if(bb!==undefined)pp.b=bb===0?0:1;pv.parts.push(pp);return}
    items.push(it)})});
- const lt=bar.lt;if(lt&&lt.on&&t.letter)items.push({x:lt.x,y:lt.y,px:B+(lt.fp||0),maxw:0,parts:[{t:String(t.letter),dx:0}]});
+ const lt=bar.lt;if(lt&&lt.on&&t.letter){const li={x:lt.x,y:lt.y,px:(+lt.sz>0)?+lt.sz:B+(lt.fp||0),maxw:0,parts:[{t:String(t.letter),dx:0}]};if(lt.fam)li.fam=lt.fam;if(lt.b===0)li.b=0;items.push(li)}
  return items}
 const LY_SAMPLES=[{cat:'GOLD JEWELLERY',tagNo:'GRG2',gw:0.1,nw:0.1,size:'10',stamp:'18K',huid:'ABC123',name:'Gold Ring'},{cat:'SILVER JEWELLERY',tagNo:'SBBC1234',gw:5,nw:4.9,size:'8',letter:'B',name:'Bangle Big Plain'},{cat:'925 SILVER JEWELLERY',tagNo:'9RG1058',gw:3,nw:3,huid:'XY99',letter:'R',name:'Ring'}];
 const LAYOUT_GOLDEN='1845848062';
@@ -500,20 +504,24 @@ function buildTSPL(l){const c=S.cfg.nudge||{},P=S.cfg.prn||{},enc=new TextEncode
 let LYC=0,LYW=null;
 const LY_FIELDS=[['','-'],['tagNo','Tag No'],['name','Print name'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp'],['size','Size'],['design','Design'],['tunch','Tunch'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['letter','Item letter'],['item','Item']];
 const lyMM=v=>+((v||0)/8).toFixed(3),lyEsc=v=>String(v).replace(/"/g,'&quot;');
-function lyBody(){const L=LYW,b=L.bar,fo=LY_FIELDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join(''),sel=v=>fo.replace(`value="${v||''}"`,`value="${v||''}" selected`);
+const LY_FONTS=['Cambria','Arial','Arial Narrow','Calibri','Times New Roman','Georgia','Verdana','Tahoma','Segoe UI','Courier New','Consolas','Impact'];
+const lyFo=(v,dl)=>`<option value="">${dl}</option>`+[...new Set([...LY_FONTS,...(v&&!LY_FONTS.includes(v)?[v]:[])])].map(f=>`<option ${f==v?'selected':''}>${lyEsc(f)}</option>`).join('');
+function lyBody(){const P0=S.cfg.prn||{},B0=n(P0.px)||19,gf=P0.font||'Cambria',L=LYW,b=L.bar,fo=LY_FIELDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join(''),sel=v=>fo.replace(`value="${v||''}"`,`value="${v||''}" selected`);
  const cats=CATS.map((c,i)=>`<button class="${i==LYC?'on':''}" onclick="lyCat(${i})">${c}</button>`).join('');
  const bi=(k,l)=>`<div><label>${l}</label><input value="${lyMM(b[k])}" onchange="lyB('${k}',this.value)"></div>`;
  const secs=L.secs.map((s,si)=>{const fl=(k,l,m)=>`<div><label>${l}</label><input value="${m?lyMM(s[k]):(s[k]??'')}" onchange="lyS(${si},'${k}',this.value,${m})"></div>`;
   const rows=s.rows.map((c,ri)=>{const rs=ri<2&&((b.side=='R'&&si>=2)||(b.side=='L'&&si<2));
-   if(rs)return`<tr><td>${ri+1}</td><td colspan="4" style="color:#888">reserved for barcode</td></tr>`;
-   return`<tr><td>${ri+1}</td><td><input value="${lyEsc(c.c||'')}" onchange="lyC(${si},${ri},'c',this.value)"></td><td><select onchange="lyC(${si},${ri},'f',this.value)">${sel(c.f)}</select></td><td><input style="width:34px" value="${c.d??''}" onchange="lyC(${si},${ri},'d',this.value)"></td>${si>0?`<td style="white-space:nowrap"><input type="checkbox" style="width:auto" ${c.j?'checked':''} onchange="lyC(${si},${ri},'j',this.checked)"> <input style="width:42px" value="${lyMM(c.g)}" onchange="lyC(${si},${ri},'g',this.value)"></td>`:'<td></td>'}</tr>`}).join('');
+   if(rs)return`<tr><td>${ri+1}</td><td colspan="5" style="color:#888">reserved for barcode</td></tr>`;
+   return`<tr><td>${ri+1}</td><td><input value="${lyEsc(c.c||'')}" onchange="lyC(${si},${ri},'c',this.value)"></td><td><select onchange="lyC(${si},${ri},'f',this.value)">${sel(c.f)}</select></td><td><input style="width:34px" value="${c.d??''}" onchange="lyC(${si},${ri},'d',this.value)"></td>${si>0?`<td style="white-space:nowrap"><input type="checkbox" style="width:auto" ${c.j?'checked':''} onchange="lyC(${si},${ri},'j',this.checked)"> <input style="width:42px" value="${lyMM(c.g)}" onchange="lyC(${si},${ri},'g',this.value)"></td>`:'<td></td>'}<td><input style=\"width:44px\" placeholder=\"size\" title=\"Size in dots. Shows the size this line uses now; change it to give this line its own size\" value=\"${c.px||((+s.sz>0)?s.sz:B0+(s.fp||0))}\" onchange=\"lyC(${si},${ri},'px',this.value)\"></td></tr>`}).join('');
   return`<div class="lysec"><b>Section ${si+1}</b><div class="grid">${fl('x','X (mm)',1)}${fl('w','Width (mm, 0=free)',1)}${fl('y0','First row Y (mm)',1)}${fl('p','Row gap (mm)',1)}</div>
-  <details><summary>Advanced</summary><div class="grid">${fl('pd','Dense gap (mm)',1)}${fl('dn','Dense if rows >',0)}${fl('fd','Dense font -(dots)',0)}${fl('fp','Font + (dots)',0)}${fl('safe','Safe bottom (mm)',1)}${fl('lim','Bottom limit (mm)',1)}</div></details>
-  <table class="lyt"><tr><th>#</th><th>Caption</th><th>Field</th><th>Dec</th><th>${si>0?'Join+gap':''}</th></tr>${rows}</table></div>`}).join('');
- return`<div class="bar">${cats}</div><p style="margin:4px 0;color:#666">Preview (grey = fold area, red line = 55 mm). Each section is a column of 4 lines (sections 1-2 = left side, 3-4 = right side); "Join" puts a cell right after the same row of the section on its left. A line with a Field but an empty value is skipped (lines below move up); a line with no Field stays blank, so each field prints at its own line number. Dec = decimals for numbers.</p>
+  <div class="grid"><div><label>Font (whole section)</label><select onchange="lySF(${si},this.value)">${lyFo(s.fam,'Global ('+gf+')')}</select></div><div><label>Size (dots)</label><input value="${(+s.sz>0)?s.sz:B0+(s.fp||0)}" onchange="lySZ(${si},this.value)"></div><div><label>Bold</label><select onchange="lySB(${si},this.value)"><option value="1" ${s.b===0?'':'selected'}>Yes</option><option value="0" ${s.b===0?'selected':''}>No</option></select></div></div>
+  <details><summary>Advanced</summary><div class="grid">${fl('pd','Dense gap (mm)',1)}${fl('dn','Dense = more than N lines',0)}${fl('fd','When dense, make text smaller by (dots)',0)}${fl('safe','Safe bottom (mm)',1)}${fl('lim','Bottom limit (mm)',1)}</div></details>
+  <table class="lyt"><tr><th>#</th><th>Caption</th><th>Field</th><th>Dec</th><th>${si>0?'Join+gap':''}</th><th>Size</th></tr>${rows}</table></div>`}).join('');
+ return`<div class="bar">${cats}</div><div class="card" style="margin:6px 0"><b>How fonts work (simple)</b><br><b>Font and Bold</b> come from the section (or the global font <b>${lyEsc(gf)}</b> from Setting → Print if the section is left on Global). <b>Size</b>: a line uses the Size typed on that line; if empty, its section's Size; if empty, the global size <b>${B0}</b>. Size is in dots: bigger number = bigger text. Text that is too long for its section shrinks by itself. The font must be installed on the PC that prints.</div>
+ <p style="margin:4px 0;color:#666">Preview (grey = fold area, red line = 55 mm). Each section is a column of 4 lines (sections 1-2 = left side, 3-4 = right side); "Join" puts a cell right after the same row of the section on its left. A line with a Field but an empty value is skipped (lines below move up); a line with no Field stays blank, so each field prints at its own line number. Dec = decimals for numbers.</p>
  <canvas id="lyp" width="656" height="96" style="width:100%;max-width:1000px;border:1px solid #999;background:#fff"></canvas>
  <div class="lysec"><b>Barcode</b><div class="grid"><div><label>Side</label><select onchange="lyB('side',this.value,1)"><option value="R" ${b.side=='R'?'selected':''}>Right (sections 3-4)</option><option value="L" ${b.side=='L'?'selected':''}>Left (sections 1-2)</option><option value="N" ${b.side=='N'?'selected':''}>None</option></select></div>${bi('x','X (mm)')}${bi('y','Y (mm)')}${bi('h','Height (mm)')}</div>
- <b>Item letter (beside barcode, silver only if you wish)</b><div class="grid"><div><label>Show</label><select onchange="lyL('on',this.value)"><option value="1" ${b.lt&&b.lt.on?'selected':''}>Yes</option><option value="0" ${b.lt&&b.lt.on?'':'selected'}>No</option></select></div><div><label>X (mm)</label><input value="${lyMM((b.lt||{}).x)}" onchange="lyL('x',this.value)"></div><div><label>Y (mm)</label><input value="${lyMM((b.lt||{}).y)}" onchange="lyL('y',this.value)"></div><div><label>Font + (dots)</label><input value="${(b.lt||{}).fp||0}" onchange="lyL('fp',this.value)"></div></div></div>
+ <b>Item letter (beside barcode)</b><div class="grid"><div><label>Show</label><select onchange="lyL('on',this.value)"><option value="1" ${b.lt&&b.lt.on?'selected':''}>Yes</option><option value="0" ${b.lt&&b.lt.on?'':'selected'}>No</option></select></div><div><label>X (mm)</label><input value="${lyMM((b.lt||{}).x)}" onchange="lyL('x',this.value)"></div><div><label>Y (mm)</label><input value="${lyMM((b.lt||{}).y)}" onchange="lyL('y',this.value)"></div><div><label>Font</label><select onchange="lyL('fam',this.value)">${lyFo((b.lt||{}).fam,'Global ('+gf+')')}</select></div><div><label>Size (dots)</label><input value="${((b.lt||{}).sz>0)?b.lt.sz:B0+((b.lt||{}).fp||0)}" onchange="lyL('sz',this.value)"></div><div><label>Bold</label><select onchange="lyL('b',this.value)"><option value="1" ${(b.lt||{}).b===0?'':'selected'}>Yes</option><option value="0" ${(b.lt||{}).b===0?'selected':''}>No</option></select></div></div></div>
  <div class="lygrid">${secs}</div>
  <div class="bar"><button class="p" onclick="lySave()">Save layout</button><button onclick="lyTest()">Test print (this layout)</button><button onclick="lyReset()">Reset to approved layout</button></div>`}
 function layoutUI(){if(!LYW)LYW=JSON.parse(JSON.stringify(getLay(LYC)));return`<div id="lyroot">${lyBody()}</div>`}
@@ -524,9 +532,12 @@ function lyPv(){const cv=$('#lyp');if(!cv||!LYW)return;const P=S.cfg.prn||{},B=n
  const b=LYW.bar;if(b.side!='N'){g.fillStyle='#000';const W=(String(smp.tagNo).length+2)*16*(b.n||1);for(let x=0,i=0;x<W;i++){const w=((i*5)%7<2?(b.w||3):(b.n||1));if(i%2==0)g.fillRect(b.x+x,b.y,w,b.h);x+=w}}}
 window.lyCat=i=>{LYC=i;LYW=null;$('#lyroot').innerHTML=(LYW=JSON.parse(JSON.stringify(getLay(LYC))),lyBody());lyPv()};
 window.lyB=(k,v,raw)=>{LYW.bar[k]=raw?v:(Math.round(parseFloat(v)*8)||0);raw?lyRender():lyPv()};
-window.lyL=(k,v)=>{const l=LYW.bar.lt=LYW.bar.lt||{on:0,x:412,y:0,fp:8};if(k=='on')l.on=+v;else if(k=='fp')l.fp=parseInt(v)||0;else l[k]=Math.round(parseFloat(v)*8)||0;lyPv()};
+window.lyL=(k,v)=>{const l=LYW.bar.lt=LYW.bar.lt||{on:0,x:412,y:0,fp:8};if(k=='on')l.on=+v;else if(k=='fp')l.fp=parseInt(v)||0;else if(k=='sz')l.sz=parseInt(v)>0?parseInt(v):undefined;else if(k=='fam')l.fam=v||undefined;else if(k=='b')l.b=v=='0'?0:undefined;else l[k]=Math.round(parseFloat(v)*8)||0;lyPv()};
 window.lyS=(si,k,v,m)=>{const x=parseFloat(v);LYW.secs[si][k]=v===''?undefined:(m?Math.round(x*8):x)||0;lyPv()};
-window.lyC=(si,ri,k,v)=>{const c=LYW.secs[si].rows[ri];if(k=='j')c.j=v?1:0;else if(k=='g')c.g=Math.round(parseFloat(v)*8)||0;else if(k=='d')c.d=v===''?'':Math.max(0,Math.min(6,parseInt(v)||0));else c[k]=v;lyPv()};
+window.lySF=(si,v)=>{LYW.secs[si].fam=v||undefined;lyPv()};
+window.lySZ=(si,v)=>{LYW.secs[si].sz=parseInt(v)>0?parseInt(v):undefined;lyRender()};
+window.lySB=(si,v)=>{LYW.secs[si].b=v=='0'?0:undefined;lyRender()};
+window.lyC=(si,ri,k,v)=>{const c=LYW.secs[si].rows[ri];if(k=='fam')c.fam=v||undefined;else if(k=='px'){const sc=LYW.secs[si],bs=(+sc.sz>0)?+sc.sz:(n((S.cfg.prn||{}).px)||19)+(sc.fp||0),z=parseInt(v);c.px=(z>0&&z!=bs)?z:undefined;lyRender();return}else if(k=='b')c.b=v?1:0;else if(k=='j')c.j=v?1:0;else if(k=='g')c.g=Math.round(parseFloat(v)*8)||0;else if(k=='d')c.d=v===''?'':Math.max(0,Math.min(6,parseInt(v)||0));else c[k]=v;lyPv()};
 window.lySave=async()=>{await set(R('cfg/layout/'+LYC),JSON.parse(JSON.stringify(LYW)));toast('✓ Layout saved for '+CATS[LYC])};
 window.lyReset=async()=>{if(!confirm('Reset '+CATS[LYC]+' to the approved layout?'))return;await set(R('cfg/layout/'+LYC),null);LYW=JSON.parse(JSON.stringify(defLayout(LYC)));lyRender()};
 window.lyTest=async()=>{LYD={ci:LYC,lay:JSON.parse(JSON.stringify(LYW))};try{await printTags([{...LY_SAMPLES[LYC]}])}finally{LYD=null}};
