@@ -166,7 +166,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .qs-tb{margin:8px 0;padding:10px 0 2px}
 .qs-tb .bar{margin:0 0 8px}.qs-tb .bar>*{flex:0 1 auto}.qs-tb input[type=text],.qs-tb input:not([type]){min-width:150px}
 .qsw{border:1px solid var(--line);border-radius:12px;overflow:clip;background:#fff;box-shadow:var(--sh);margin:8px 0}
-.qsr{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(130px,1.1fr) 64px minmax(240px,3fr) 104px;gap:8px;align-items:start;padding:8px 10px;border-bottom:1px solid #efe6d0}
+.qsr{display:grid;grid-template-columns:minmax(150px,1.1fr) 78px minmax(130px,1.1fr) 64px minmax(240px,3fr) 104px;gap:8px;align-items:start;padding:8px 10px;border-bottom:1px solid #efe6d0}
 .qsr:last-child{border-bottom:0}
 .qsh{background:#f3ead3;color:#5a4a2c;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;z-index:4;align-items:center}
 .qsr.ch:not(.qsh){background:#fffaf0;box-shadow:inset 4px 0 0 var(--gold2)}
@@ -178,7 +178,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .qshelp{margin:6px 0}.qshelp code{background:var(--soft);padding:1px 6px;border-radius:5px;font-size:12.5px}
 .qshelp table{width:auto;margin:6px 0}.qshelp td{padding:3px 12px 3px 0;border:0;background:none!important}
 @media(max-width:860px){.qsh{display:none}.qs-tb{position:static}
- .qsr{grid-template-columns:1fr 84px;gap:8px 10px}.qsr>.qsn,.qsr>.qsrc,.qsr>.qsb{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.qsl{display:block}}
+ .qsr{grid-template-columns:84px 1fr 84px;gap:8px 10px}.qsr>.qsn,.qsr>.qsrc,.qsr>.qsb{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.qsl{display:block}}
 .mgr{gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}.mgr:focus-within{border-color:var(--gold2);box-shadow:0 0 0 2px rgba(201,154,59,.2)}.mgr select,.mgr input{border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important}.mgr select{flex:0 0 42%;border-right:1px solid var(--line)!important;font-weight:600;color:var(--gold)}
 
 .bn{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;background:#fff4e0;border:1px solid #e8b96a;border-left:5px solid #c77700;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:13.5px;line-height:1.5}.bn.e{background:#fdeeed;border-color:#e3a39e;border-left-color:var(--red)}.bn button{min-height:0;padding:5px 10px;margin:6px 6px 0 0;font-size:12.5px}.bn .bnx{margin:0;border:0;background:transparent;font-size:16px;padding:0 4px}
@@ -757,8 +757,8 @@ function qsT2R(t,known){const rules=[],err=[];let st='';
 function qsR2T(rs){let cur='';return(rs||[]).map(r=>{const s=String(r.stamp??'').trim(),mn=String(r.min??'').trim()||'0',mx=String(r.max??'').trim();let p='';if(s!==cur){p='['+(s||'any')+'] ';cur=s}
  return p+((!mx||n(mx)>=9999)?mn+'+':mn+'-'+mx)+' '+String(r.val??'').trim()+(QSU[r.type]||'%')}).join('; ')}
 const qsNorm=(t,known)=>{const p=qsT2R(t,known);return p.err.length?String(t||'').trim():qsR2T(p.rules)};
-const qsV=(r,f)=>{const d=QS.d[r.key];if(d&&d[f]!==undefined)return d[f];return f=='pn'?(r.it.printName??''):f=='lt'?(r.it.letter??''):qsR2T(r.it.rules)};
-const qsCh=r=>{const d=QS.d[r.key];if(!d)return false;return(d.pn!==undefined&&d.pn.trim()!==String(r.it.printName||'').trim())||(d.lt!==undefined&&d.lt.trim()!==String(r.it.letter||'').trim())||(d.ru!==undefined&&qsNorm(d.ru,qsKnown(r.it))!==qsR2T(r.it.rules))};
+const qsV=(r,f)=>{const d=QS.d[r.key];if(d&&d[f]!==undefined)return d[f];return f=='px'?(r.it.prefix??''):f=='pn'?(r.it.printName??''):f=='lt'?(r.it.letter??''):qsR2T(r.it.rules)};
+const qsCh=r=>{const d=QS.d[r.key];if(!d)return false;return(d.px!==undefined&&d.px.trim()!==String(r.it.prefix||'').trim())||(d.pn!==undefined&&d.pn.trim()!==String(r.it.printName||'').trim())||(d.lt!==undefined&&d.lt.trim()!==String(r.it.letter||'').trim())||(d.ru!==undefined&&qsNorm(d.ru,qsKnown(r.it))!==qsR2T(r.it.rules))};
 const qsN=()=>QS.list.filter(qsCh).length;
 const qsLS=()=>lss('tg_qs',Object.keys(QS.d).length?JSON.stringify(QS.d):'');
 function qsConf(rules){const o=[],sn=x=>String(x||'').trim().toLowerCase(),R=rules||[];
@@ -777,14 +777,15 @@ window.bnShow=(id,html,err)=>{const e=document.getElementById(id);if(!e)return f
 function qsPv(r){const kn=qsKnown(r.it),p=qsT2R(qsV(r,'ru'),kn);
  return p.err.length?['e','Problem: '+p.err.join(' | ')+(kn.length?'   (stamps for this item: '+kn.join(', ')+')':'')+'   Format: [22K] 0-5 12%']:(()=>{const cf=qsConf(p.rules);if(cf.length)return['w','⚠ Conflicting rules: '+cf.join(' | ')];const st=[...new Set(p.rules.map(x=>x.stamp||'any'))];const gp=qsGaps(p.rules);if(gp.length)return['w','⚠ Gap in weight ranges: '+gp.join(' | ')+' — no making will auto-fill there'];return['s',p.rules.length?`<span class="sum">${p.rules.length} rule${p.rules.length>1?'s':''} · ${st.map(x=>x=='any'?'any stamp':hx(x)).join(', ')}</span><span class="full">${p.rules.map(x=>(x.stamp?hx(x.stamp)+': ':'')+x.min+'–'+(n(x.max)>=9999?'∞':x.max)+' g → '+QSN[x.type]+' '+x.val).join('   ·   ')}</span>`:'']})()}
 function qsRow(r,i){const[pc,pt]=qsPv(r),bad=pc=='e';
- return`<div class="qsr${qsCh(r)?' ch':''}${bad?' bad':''}" data-i="${i}"><div class="qsn">${cbg(r.it.cat)}<b>${hx(r.it.name)}</b><small>${hx(r.it.prefix||'')}</small></div>
+ return`<div class="qsr${qsCh(r)?' ch':''}${bad?' bad':''}" data-i="${i}"><div class="qsn">${cbg(r.it.cat)}<b>${hx(r.it.name)}</b></div>
+<div><span class="qsl">Prefix</span><input data-f="px" value="${hx(qsV(r,'px'))}" style="text-align:center;font-weight:700" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
 <div><span class="qsl">Print name</span><input data-f="pn" placeholder="${hx(r.it.name)}" value="${hx(qsV(r,'pn'))}" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off"></div>
 <div><span class="qsl">Letter</span><input data-f="lt" value="${hx(qsV(r,'lt'))}" maxlength="3" style="text-align:center;font-weight:700" oninput="qsIn(this)" onkeydown="qsKey(event)" autocomplete="off"></div>
 <div class="qsrc"><span class="qsl">Making rules (sale, by net weight)</span><textarea data-f="ru" rows="1" placeholder="0-5 12%; [22K] 0-5 14%; [18K] 0-5 16%" oninput="qsIn(this);qsGrow(this)" onfocus="qsGrow(this)" onblur="qsShrink(this)" onkeydown="qsKey(event)" autocomplete="off" autocapitalize="off" spellcheck="false">${hx(qsV(r,'ru').replace(/; /g,'\n'))}</textarea><div class="qsp ${pc}">${pc=='s'?pt:hx(pt)}</div></div>
 <div class="qsb"><button title="Open full item editor" onclick="qsEdit(${i})">✎ Edit</button><button title="Copy these rules to every item in this category" onclick="qsCopy(${i})">⧉ Copy to all ${hx(CSH[CATS.indexOf(r.it.cat)]||'')}</button>${qsGaps(qsT2R(qsV(r,'ru'),qsKnown(r.it)).rules).length?`<button title="Stretch each range up to the next one's start" onclick="qsFix(${i})">⇥ Close gaps</button>`:''}${qsCh(r)?`<button title="Undo unsaved changes on this item" onclick="qsRev(${i})">↺ Undo</button>`:''}</div></div>`}
 function qsRows(){const q=QS.q.trim().toLowerCase();
  QS.vis=QS.list.map((r,i)=>i).filter(i=>{const r=QS.list[i];return(!QS.cat||r.it.cat==QS.cat)&&(!q||(r.it.name+' '+(r.it.printName||'')+' '+(r.it.prefix||'')).toLowerCase().includes(q))&&(!QS.nor||!qsV(r,'ru').trim())&&(!QS.chg||qsCh(r))});
- $('#qsrows').innerHTML=QS.vis.length?`<div class="qsr qsh"><div>Item</div><div>Print name</div><div>Letter</div><div>Making rules (sale, by net weight)</div><div></div></div>`+QS.vis.map(i=>qsRow(QS.list[i],i)).join(''):'<p class="mut" style="padding:14px;margin:0">No items match.</p>';qsSt()}
+ $('#qsrows').innerHTML=QS.vis.length?`<div class="qsr qsh"><div>Item</div><div>Prefix</div><div>Print name</div><div>Letter</div><div>Making rules (sale, by net weight)</div><div></div></div>`+QS.vis.map(i=>qsRow(QS.list[i],i)).join(''):'<p class="mut" style="padding:14px;margin:0">No items match.</p>';qsSt()}
 function qsSt(){const c=qsN(),e=$('#qsst'),b=$('#qssv'),x=$('#qsdc');if(!e)return;const nr=QS.list.filter(r=>!qsV(r,'ru').trim()).length;
  e.textContent=QS.vis.length+' shown of '+QS.list.length+' items · '+nr+' without rules · '+c+' unsaved';b.textContent=c?'Save '+c+' changed item'+(c>1?'s':''):'Nothing to save';b.disabled=!c;x.style.display=c?'':'none'}
 function qsShell(){return`<p class="sub">Type the print name, letter and making rules for every item, then Save (or Ctrl+S). In print name / letter, Enter / ↓ / ↑ jumps to the next / previous item. Tap the rules box to open it — one rule per line (Enter = new line, Ctrl+Enter = next item). Unsaved typing is kept on this device.</p><div id="qsbn"></div>
@@ -815,11 +816,14 @@ window.qsCopy=i=>{const r=QS.list[i],t=qsV(r,'ru'),p=qsT2R(t,qsKnown(r.it));if(p
 window.qsDiscard=()=>{if(!confirm('Discard all '+qsN()+' unsaved changes?'))return;QS.d={};qsLS();qsRows()};
 window.qsSave=async force=>{const bad=[],ch=QS.list.filter(qsCh);ch.forEach(r=>{if(qsT2R(qsV(r,'ru'),qsKnown(r.it)).err.length)bad.push(r.it.name)});
  if(bad.length)return bnShow('qsbn','<b>Fix the making rules (red boxes) on:</b> '+bad.map(hx).join(', '),1);if(!ch.length)return;
+ const pch=ch.filter(r=>qsV(r,'px').trim()!==String(r.it.prefix||'').trim()),pe=[];pch.forEach(r=>{const np=qsV(r,'px').trim();if(!np)return pe.push(r.it.name+': prefix cannot be empty');const d=QS.list.find(x=>x.key!=r.key&&qsV(x,'px').trim()==np);if(d)pe.push(r.it.name+': prefix '+np+' is already used by '+d.it.name)});
+ if(pe.length)return bnShow('qsbn','<b>Prefix problem — nothing saved</b><br>'+pe.map(hx).join('<br>'),1);
+ if(pch.length&&force!==2&&!confirm('Change prefix on '+pch.length+' item'+(pch.length>1?'s':'')+'?\n'+pch.map(r=>r.it.name+': '+(r.it.prefix||'')+' → '+qsV(r,'px').trim()).join('\n')+'\n\nNew tags will use the new prefix. Tags already made keep their numbers.'))return;
  const cfl=[],gpl=[];ch.forEach(r=>{const rl=qsT2R(qsV(r,'ru'),qsKnown(r.it)).rules,c=qsConf(rl),g=qsGaps(rl);if(c.length)cfl.push(r.it.name+': '+c.join(' | '));if(g.length)gpl.push(r.it.name+': '+g.join(' | '))});
  if(cfl.length)return bnShow('qsbn','<b>⚠ Conflicting making rules — nothing saved</b><br>'+cfl.map(hx).join('<br>')+'<br>Two rules for the same stamp cover the same weight. A range includes its From weight, not its To weight.',1);
  if(gpl.length&&force!==1)return bnShow('qsbn','<b>⚠ Gaps in weight ranges</b> — no making will auto-fill there<br>'+gpl.map(hx).join('<br>')+'<br><button onclick="qsFixAll(1)">⇥ Close gaps</button><button onclick="qsSave(1)">Save anyway</button>');
  bnShow('qsbn','');
- const up={};ch.forEach(r=>{const b='items/'+r.key+'/';up[b+'printName']=qsV(r,'pn').trim()||r.it.name;up[b+'letter']=qsV(r,'lt').trim();const p=qsT2R(qsV(r,'ru'),qsKnown(r.it));up[b+'rules']=p.rules.length?p.rules:null});
+ const up={};ch.forEach(r=>{const b='items/'+r.key+'/';if(pch.includes(r))up[b+'prefix']=qsV(r,'px').trim();up[b+'printName']=qsV(r,'pn').trim()||r.it.name;up[b+'letter']=qsV(r,'lt').trim();const p=qsT2R(qsV(r,'ru'),qsKnown(r.it));up[b+'rules']=p.rules.length?p.rules:null});
  const ks=Object.keys(up);try{for(let i=0;i<ks.length;i+=300){const o={};ks.slice(i,i+300).forEach(x=>o[x]=up[x]);await update(R(''),o)}}catch(e){return bnShow('qsbn','<b>Not saved:</b> '+hx(e.message||e),1)}
  QS.d={};qsLS();toast('✓ Saved '+ch.length+' item'+(ch.length>1?'s':''));if($('#qsrows'))qsRows()};
 
