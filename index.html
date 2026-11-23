@@ -196,7 +196,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .hq{margin:0 0 12px}.hq>input{width:100%;box-sizing:border-box}.hq-l{background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:6px;overflow:hidden;box-shadow:var(--sh)}.hq-r{display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-bottom:1px solid #efe6d0;cursor:pointer}.hq-r:last-child{border-bottom:0}.hq-r:hover{background:#f6ebcb}.hq-r b{color:var(--gold)}.hq-r span{color:var(--mut);font-size:13px}
 .attn{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);margin:12px 0;overflow:hidden}.at-t{padding:10px 14px;background:#f3ead3;font-size:13.5px}.at-r{display:flex;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid #efe6d0;cursor:pointer}.at-r span:nth-child(2){flex:1}.at-r:hover{background:#fffaf0}
 .efold{display:block!important;width:100%;box-sizing:border-box;text-align:left;margin:12px 0 0;padding:12px 14px;border:1px dashed var(--gold2);border-radius:10px;background:#fffaf0;color:var(--gold);font-weight:600;font-size:14px;line-height:1.4;height:auto}
-.tw td.ec{padding:3px 4px;background:#fffaf0}.tw td.ec .mgr{min-width:150px}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
+.tw td.ec{padding:3px 4px;background:#fffaf0}.tw td.ec .mgr{min-width:150px}.tw input.ei,.tw select.ei{scroll-margin:90px 0 30px}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="hdTap()" onkeydown="if(event.key=='Enter')hdTap()">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
@@ -602,7 +602,7 @@ document.addEventListener('keydown',e=>{const x=e.target;if(!x.classList||!x.cla
  const col=stAll().filter(i=>i.dataset.c==x.dataset.c&&i.tagName=='INPUT'),i=col.indexOf(x),nx=col[i+(dn?1:-1)];e.preventDefault();
  if(nx){stFo={no:nx.dataset.t,c:nx.dataset.c,at:Date.now()};nx.focus();nx.select()}else x.blur()});
 const stRF=()=>{if(!stFo||Date.now()-stFo.at>2500||view!='stock'||!stEL)return;const a=document.activeElement;if(a&&a!=document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;
- const e=stAll().find(i=>i.dataset.t==stFo.no&&i.dataset.c==stFo.c);if(e){e.focus();if(e.select)e.select()}};
+ const e=stAll().find(i=>i.dataset.t==stFo.no&&i.dataset.c==stFo.c);if(e){e.focus();if(e.select)e.select();e.scrollIntoView({block:'nearest'})}};
 {const r0=render;render=function(){r0.apply(this,arguments);stRF()}}
 
 window.stEL_=()=>{stEL=!stEL;stSel.clear();render()};
@@ -680,7 +680,7 @@ function stMo(){const t=ME.o,f=ME.f;
  m.innerHTML=`<div class="md"><div class="mh"><div><h3 style="margin:0">Edit tag ${hx(t.tagNo)}</h3><span class="mut">${hx(t.item)} · ${hx(t.cat)}</span></div><button onclick="stMc()">✕</button></div><div class="grid"><div style="grid-column:span 2"><label>Item (changing gives a new tag number)</label><select onchange="ME.f.item=this.value;ME.f.design='';stMo()">${[...new Set([t.item,...Object.values(S.items).filter(i=>i.cat==t.cat).map(i=>i.name)])].map(x=>`<option value="${hx(x)}" ${x==(f.item||t.item)?'selected':''}>${hx(x)}</option>`).join('')}</select></div>${inp}</div><div id="rh">${stRH()}</div>${eb}${empH?`<div class="grid" style="margin-top:10px">${empH}</div>`:''}<div class="bar mf"><button class="p" onclick="stMs(0)">Save</button><button onclick="stMs(1)">Save + Print</button><button onclick="stMc()">Cancel</button><span style="flex:1"></span><button class="d" onclick="stMd()">Delete tag</button></div></div>`}
 window.stMi=(x,v)=>{ME.f[x]=v;setTimeout(()=>{const e=$('#rh');if(e)e.innerHTML=stRH()},0);if(x=='gw'||x=='less'){ME.f.nw=Math.max(0,n(ME.f.gw)-n(ME.f.less)).toFixed(3);const e=document.querySelector('#mo input[data-m=nw]');if(e)e.value=ME.f.nw}};
 window.stMc=()=>{const m=$('#mo');if(m)m.remove();ME=null};
-const stKeep=async fn=>{const y=scrollY,sc=$('#stt .tw'),sy=sc?sc.scrollTop:0;await fn();const s2=$('#stt .tw');if(s2)s2.scrollTop=sy;scrollTo(0,y)};
+const stKeep=async fn=>{const y=scrollY,sc=$('#stt .tw'),sy=sc?sc.scrollTop:0;await fn();const s2=$('#stt .tw');if(s2)s2.scrollTop=sy;scrollTo(0,y);const ae=document.activeElement;if(ae&&ae.classList&&ae.classList.contains('ei')&&view=='stock'&&stEL)ae.scrollIntoView({block:'nearest'})};
 window.stMs=async pr=>{if(!ME)return;if(!n(ME.f.gw)&&!(n(ME.f.mrp)>0))return alert('Gross weight (or MRP) is required');
  if(n(ME.f.mrp)>0)['sw','sp','swt','srs','srate'].forEach(x=>ME.f[x]='');
  const d={};Object.keys(ME.f).forEach(x=>{if(String(ME.f[x]??'')!==String(ME.o[x]??''))d[x]=ME.f[x]});const no=ME.no;
