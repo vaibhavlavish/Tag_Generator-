@@ -359,7 +359,11 @@ const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CS
 let S={stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
 let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
 
-window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;SHE=false;vou=null;F={cat:CATS[0]};editing=null}render()};
+window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;SHE=false;vou=null;F=lfLoad()||{cat:CATS[0]};editing=null}render()};
+/* Remember the last entered fields (category, item, supplier, stamp, tunch, making...) on this device, so leaving Auto/Bulk and coming back does not mean typing them all again. Per-tag values (gross, less, net, HUID) are never remembered. */
+const LF_KEY='tg_last_fields';
+function lfSave(){if(editing)return;try{const o={...F};['gw','less','nw','huid'].forEach(x=>o[x]='');lss(LF_KEY,JSON.stringify({F:o,ts:Date.now()}))}catch(e){}}
+function lfLoad(){try{const o=JSON.parse(lsg(LF_KEY)||'null');return o&&o.F&&o.F.cat&&CATS.includes(o.F.cat)?o.F:null}catch(e){return null}}
 const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
 /* SOLD tags (list published by the POS at tagsoft/sold) are only HIDDEN from stock views, never deleted. 5 quick taps on the title reveal them; one tap hides them again. */
 let SOLD_SHOW=false,HDN=0,HDT=0;
@@ -377,6 +381,7 @@ const mgO=c=>c=='F'?F:ME.f,mgT=(g,o)=>MG[g].f.find(x=>n(o[x]))||MT[g];
 function mgHtml(g,c){const m=MG[g],o=mgO(c),t=mgT(g,o);return`<div id="mg-${g}${c=='F'?'':'m'}" style="grid-column:span 2"><label>${m.t}</label><div class="mgr"><select class="mgs" onchange="mgS('${g}','${c}',this.value)">${m.f.map((x,i)=>`<option value="${x}" ${x==t?'selected':''}>${m.l[i]}</option>`).join('')}</select><input class="mgv" inputmode="decimal" value="${hx(o[t]??'')}" oninput="mgV('${g}','${c}',this.value)"></div></div>`}
 window.mgS=(g,c,t)=>{const o=mgO(c),v=o[mgT(g,o)]??'';MG[g].f.forEach(x=>o[x]='');o[t]=v;MT[g]=t};
 window.mgV=(g,c,v)=>{const o=mgO(c),t=mgT(g,o);MT[g]=t;MG[g].f.forEach(x=>{if(x!=t)o[x]=''});o[t]=v.trim()};
+{const _a=window.mgS,_b=window.mgV;window.mgS=(...a)=>{_a(...a);lfSave()};window.mgV=(...a)=>{_b(...a);lfSave()}}
 function mgSync(){['s','p','l'].forEach(g=>{const e=$('#mg-'+g);if(!e)return;const t=mgT(g,F);e.querySelector('.mgs').value=t;e.querySelector('.mgv').value=F[t]??''})}
 function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='item')return Object.values(S.items).filter(i=>i.cat==c).map(i=>i.name).sort();
@@ -403,12 +408,13 @@ function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Aut
 </div>
  ${qb}
  <div class="card"><div class="bar"><b>Voucher</b><button onclick="nv(-1)">◀</button><b>${vou}</b><button onclick="nv(1)">▶</button><button onclick="vou=maxVou()+1;render()">+ New</button><span>${vt.length?vt.length+' tags':'Nil'}</span></div>
- <table><tr><th>Tag</th><th>Item</th><th>Gr</th><th>Net</th><th>Stamp</th><th>Size</th><th class="dx"></th></tr>${vt.map(t=>`<tr class="r" onclick="ed('${t.tagNo}')"><td>${t.tagNo}</td><td>${t.item}</td><td>${t.gw}</td><td>${t.nw}</td><td>${t.stamp||''}</td><td>${t.size||''}</td><td class="dx"><button class="d" onclick="event.stopPropagation();del('${t.tagNo}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No tags in this voucher yet — fill the boxes, enter Gross wt and press Enter.</td></tr>'}</table></div>
+ <table><tr><th>Tag</th><th>Item</th><th>Gr</th><th>Net</th><th>Stamp</th><th>Size</th><th>F+W</th><th class="dx"></th></tr>${vt.map(t=>`<tr class="r" onclick="ed('${t.tagNo}')"><td>${t.tagNo}</td><td>${t.item}</td><td>${t.gw}</td><td>${t.nw}</td><td>${t.stamp||''}</td><td>${t.size||''}</td><td>${fwOf(t)?fwOf(t).toFixed(3):''}</td><td class="dx"><button class="d" onclick="event.stopPropagation();del('${t.tagNo}')">Delete</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No tags in this voucher yet — fill the boxes, enter Gross wt and press Enter.</td></tr>'}${vt.length?`<tr class="tot"><td colspan="2"><b>Total · ${vt.length} tag${vt.length>1?'s':''}</b></td><td><b>${vt.reduce((x,t)=>x+n(t.gw),0).toFixed(3)}</b></td><td><b>${vt.reduce((x,t)=>x+n(t.nw),0).toFixed(3)}</b></td><td></td><td></td><td><b>${vt.reduce((x,t)=>x+fwOf(t),0).toFixed(3)}</b></td><td class="dx"></td></tr>`:''}</table></div>
  <div class="bar"><button onclick="go('home')">Cancel</button></div>`;
- if(FG){const g=$('#'+FG);FG=false;if(g)g.focus()}else if(af){const e=a.querySelector('[data-f="'+af+'"]');if(e&&e.focus){e.focus();try{if(e.setSelectionRange&&e.type!='number')e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}}
+ if(FG){const g=$('#'+FG);FG=false;if(g)g.focus()}else if(af){const e=a.querySelector('[data-f="'+af+'"]');if(e&&e.focus&&e.tagName!='SELECT'){e.focus();try{if(e.setSelectionRange&&e.type!='number')e.setSelectionRange(e.value.length,e.value.length)}catch(x){}}}}
 window.sv=(f,v,q)=>{if(f=='gw'||f=='less'){v=String(v).replace(/[^0-9.]/g,'').replace(/^(\d*\.\d*)\./,'$1');v=v.replace(/(\.\d{3})\d+/,'$1')}F[f]=v;if(f=='cat'){F.item=F.stamp=F.design=''}if(f=='item'){const it=S.items[k(v)];if(it)F.design='';preset()}if(f=='stamp')preset();
  if(f=='gw'||f=='less'){F.nw=Math.max(0,n(F.gw)-n(F.less)).toFixed(3);preset()}
  if(!q)render();else if(f=='gw'||f=='less'){const i=[...document.querySelectorAll('.grid input')];FIELDS.forEach(([ff],ix)=>{});document.querySelectorAll('input[data-f]').forEach(e=>e.value=F[e.dataset.f]??'');mgSync()}};
+{const _sv=window.sv;window.sv=(f,v,q)=>{_sv(f,v,q);lfSave()}}
 function preset(){if(editing)return;const it=S.items[k(F.item||'')];if(!it||!it.rules)return;const w=n(F.nw);if(!w)return;if(n(F.srate)>0)return;const sn=x=>String(x||'').trim().toLowerCase(),st=sn(F.stamp),inr=r=>w>=n(r.min)&&w<n(r.max),r=(st&&it.rules.find(r=>inr(r)&&sn(r.stamp)==st))||it.rules.find(r=>inr(r)&&!sn(r.stamp));if(r){['sw','sp','swt','srs'].forEach(x=>F[x]='');F[r.type]=r.val}}
 window.nv=d=>{const l=vous();const i=l.indexOf(vou);const j=i<0?(d<0?l.length-1:-1):i+d;if(l[j]!=null)vou=l[j];render()};
 window.ed=t=>{editing=t;SHE=false;F={...S.tags[t]};render()};
@@ -430,7 +436,7 @@ window.gen=async()=>{const it=S.items[k(F.item||'')];if(!it||!F.cat||(!n(F.gw)&&
   const d={};Object.keys(F).forEach(x=>{if(['status','tagNo','ts','vou','vtype','printed'].includes(x))return;if(String(F[x]??'')!==String(o[x]??''))d[x]=F[x]});
   if(Object.keys(d).length)await update(R('tags/'+editing),d);t={...o,...d,tagNo:editing}}else{await claimVou();const no=await nextNo(it.prefix);t={...F,tagNo:no,name:it.printName||it.name,letter:it.letter||'',vou,vtype:'TG',ts:Date.now(),status:'live',printed:0};await set(R('tags/'+no),t);await set(R('cfg/vous/'+vou),1)}
  if(mode=='auto'||editing){printTags([t]);await update(R('tags/'+t.tagNo),{printed:1})}
- toast('✓ '+t.tagNo+(editing?' updated':mode=='auto'?' created':' added'));const keep={...F};['gw','less','nw','huid'].forEach(x=>keep[x]='');F=editing?{cat:CATS[0]}:keep;editing=null;render()};
+ toast('✓ '+t.tagNo+(editing?' updated':mode=='auto'?' created':' added'));const keep={...F};['gw','less','nw','huid'].forEach(x=>keep[x]='');const wasE=editing;F=wasE?(lfLoad()||{cat:CATS[0]}):keep;editing=null;if(!wasE)lfSave();render()};
 window.printAll=()=>{const l=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived'&&!t.printed);if(!l.length)return alert('Nothing pending');printTags(l);l.forEach(t=>update(R('tags/'+t.tagNo),{printed:1}))};
 const C39={0:'nnnwwnwnn',1:'wnnwnnnnw',2:'nnwwnnnnw',3:'wnwwnnnnn',4:'nnnwwnnnw',5:'wnnwwnnnn',6:'nnwwwnnnn',7:'nnnwnnwnw',8:'wnnwnnwnn',9:'nnwwnnwnn',A:'wnnnnwnnw',B:'nnwnnwnnw',C:'wnwnnwnnn',D:'nnnnwwnnw',E:'wnnnwwnnn',F:'nnwnwwnnn',G:'nnnnnwwnw',H:'wnnnnwwnn',I:'nnwnnwwnn',J:'nnnnwwwnn',K:'wnnnnnnww',L:'nnwnnnnww',M:'wnwnnnnwn',N:'nnnnwnnww',O:'wnnnwnnwn',P:'nnwnwnnwn',Q:'nnnnnnwww',R:'wnnnnnwwn',S:'nnwnnnwwn',T:'nnnnwnwwn',U:'wwnnnnnnw',V:'nwwnnnnnw',W:'wwwnnnnnn',X:'nwnnwnnnw',Y:'wwnnwnnnn',Z:'nwwnwnnnn','*':'nwnnwnwnn'};
 function bc(txt,x,y,w,h){let u=0;const s=('*'+txt.toUpperCase()+'*').split('').map(c=>C39[c]||C39[0]);s.forEach(p=>{for(const e of p)u+=e=='w'?3:1;u+=1});const m=0.12512;let cx=0,r='';
@@ -566,6 +572,8 @@ const stFa=()=>Object.values(stF).some(v=>v!=='');
 const tagOK=t=>(!stF.stamp||t.stamp==stF.stamp)&&(!stF.size||String(t.size??'').trim()==stF.size)&&(!stF.design||t.design==stF.design)&&(!stF.mk||(stF.mk=='y')==hasMk(t))&&(stF.wmin===''||n(t.nw)>=n(stF.wmin))&&(stF.wmax===''||n(t.nw)<=n(stF.wmax));
 const srt=(l,s)=>l.slice().sort((x,y)=>{const g=(t,k)=>k=='fine'?fineOf(t):k=='cost'?costOf(t):k=='tdate'?(+t.ts||0):k=='pm'||k=='sm'?(mkv(t,k)||{v:0}).v:t[k],a=g(x,s.k),b=g(y,s.k);const r=TY[s.k]=='n'?n(a)-n(b):String(a??'').localeCompare(String(b??''),undefined,{numeric:true,sensitivity:'base'});return(r||tagCmp(x,y))*s.d});
 const arw=(s,c)=>`<span class="ar">${s.k==c?(s.d>0?'▲':'▼'):'⇅'}</span>`;
+/* F+W = net weight x (tunch + purchase wastage) / 100 — same formula the costing uses */
+const fwOf=t=>n(t.nw)*(n(t.tunch)+n(t.pw))/100;
 const fineOf=t=>n(t.tunch)?n(t.nw)*n(t.tunch)/100:0;
 /* Costing = PRATE tag: net wt x PRATE (or pcs x PRATE /pc); Rate tag: ((wt x (tunch+P/wstg))/100 x Rate) + labour (wt x Labour/g, or pcs x Labour/pc); neither = blank */
 const labOf=t=>n(t.lpc)?(n(t.pcs)||1)*n(t.lpc):n(t.nw)*n(t.lab);
