@@ -733,7 +733,7 @@ window.togS=()=>{SHS=!SHS;render()};
 let HQ='';
 function homeSearch(){return`<div class="hq"><input id="hsq" placeholder="🔍 Search tag no, HUID or item   ( / )" oninput="homeQ(this.value)" autocomplete="off" value="${hx(HQ)}"><div id="hq">${homeQR(HQ)}</div></div>`}
 window.homeQ=v=>{HQ=v;const e=$('#hq');if(e)e.innerHTML=homeQR(v)};
-function homeQR(v){const q=String(v||'').trim().toLowerCase();if(!q)return'';const tg=live().filter(t=>{const no=String(t.tagNo).toLowerCase();return no.startsWith(q)||(q.length>=3&&no.includes(q))||String(t.huid??'').toLowerCase()==q}).slice(0,6),it=Object.values(S.items||{}).filter(i=>String(i.name).toLowerCase().includes(q)||String(i.prefix||'').toLowerCase()==q).slice(0,6);
+function homeQR(v){const q=String(v||'').trim().toLowerCase();if(!q)return'';const tg=stockLive().filter(t=>{const no=String(t.tagNo).toLowerCase();return no.startsWith(q)||(q.length>=3&&no.includes(q))||String(t.huid??'').toLowerCase()==q}).slice(0,6),it=Object.values(S.items||{}).filter(i=>String(i.name).toLowerCase().includes(q)||String(i.prefix||'').toLowerCase()==q).slice(0,6);
  const r=[...tg.map(t=>`<div class="hq-r" data-t="${hx(t.tagNo)}" onclick="stEd(this.dataset.t)"><b>${hx(t.tagNo)}</b><span>${hx(t.item)} · ${n(t.nw).toFixed(3)} g${t.stamp?' · '+hx(t.stamp):''}</span></div>`),...it.map(i=>`<div class="hq-r" data-i="${hx(i.name)}" onclick="go('stock');stO(this.dataset.i)"><b>${hx(i.name)}</b><span>${hx(i.cat)} · open in stock</span></div>`)];
  return r.length?`<div class="hq-l">${r.join('')}</div>`:'<p class="mut" style="margin:6px 2px">No match</p>'}
 window.goNoRules=()=>{QS.nor=true;QS.cat='';QS.q='';IE=null;IV='sheet';view='settings';sub='items';render();scrollTo(0,0)};
