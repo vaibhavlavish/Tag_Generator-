@@ -301,10 +301,9 @@ window.abChoose=async()=>{if(!window.showDirectoryPicker){alert('This browser ca
 async function abRun(manual){const h=await abHandle(!!manual);
  if(!h){if(manual)alert('The backup folder is not connected, or the browser needs your permission again.\n\nChoose the folder again (or tap Backup now once more) to reconnect.');abStatus('⚠ Folder not connected — reconnect it here.');abWarn();return false}
  if(!Object.keys(S.tags||{}).length&&!Object.keys(S.items||{}).length){if(manual)alert('There is no data to back up yet.');return false}
- try{const d=new Date(),name='tagsoft_backup_'+abDay(d)+'_'+pad2(d.getHours())+pad2(d.getMinutes())+'.json';
+ try{const d=new Date(),name='tag gen backup.json';
   const fh=await h.getFileHandle(name,{create:true}),w=await fh.createWritable();await w.write(JSON.stringify(abData()));await w.close();
   lss('tg_ab_last',d.toISOString());
-  try{const nm=[];for await(const[x]of h.entries())if(AB_RE.test(x))nm.push(x);nm.sort();for(const x of nm.slice(0,Math.max(0,nm.length-AB_KEEP)))await h.removeEntry(x)}catch(e){}
   abStatus();abWarn();if(manual)toast('✓ Backup saved: '+name);return true}
  catch(e){if(manual)alert('Backup failed: '+e.message);abStatus('⚠ Last backup failed: '+e.message);return false}}
 /* every minute: run any scheduled time that has passed; also catches up a slot missed while the app/PC was off */
@@ -321,7 +320,7 @@ async function abStatus(msg){const f=document.getElementById('abfol'),l=document
 window.abAdd=()=>{const e=$('#abt');if(!e||!e.value)return;const ts=abTimes();if(!ts.includes(e.value))ts.push(e.value);lss('tg_ab_times',JSON.stringify(ts.sort()));render()};
 window.abDel=x=>{lss('tg_ab_times',JSON.stringify(abTimes().filter(y=>y!=x)));render()};
 function backupUI(){const ts=abTimes().slice().sort();
- return`<p class="mut" style="margin:0 0 8px">Saves a full copy of all Tag Generator data into a folder on this computer. Pick a Google Drive / OneDrive synced folder to keep it online too. Works in Chrome or Edge on a computer — set it up on the main PC.</p>
+ return`<p class="mut" style="margin:0 0 8px">Saves a full copy of all Tag Generator data into one file named “tag gen backup.json” in a folder on this computer — each backup overwrites that same file. Pick a Google Drive / OneDrive synced folder to keep it online too. Works in Chrome or Edge on a computer — set it up on the main PC.</p>
  <div class="bar"><button class="p" onclick="abChoose()">Choose folder</button><button onclick="abRun(true)">Backup now</button></div>
  <p id="abfol" style="margin:4px 0"></p><p id="ablast" class="mut" style="margin:4px 0"></p>
  <div class="sh" style="margin-top:14px">Schedule</div>
@@ -364,8 +363,8 @@ window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';st
 const live=()=>Object.values(S.tags).filter(t=>t.status!='archived');
 const vous=()=>[...new Set([...live().map(t=>+t.vou),...Object.keys(S.cfg.vous||{}).map(Number)])].filter(Boolean).sort((a,b)=>a-b);
 const maxVou=()=>Math.max(0,...Object.values(S.tags).map(t=>+t.vou||0),...Object.keys(S.cfg.vous||{}).map(Number));
-const FIELDS=[['cat','Category','sel'],['item','Item','sel'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp','sel'],['size','Size'],['design','Design','sel'],['tunch','Tunch'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['lab','Labour /g'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier','sel']];
-const MG={s:{f:['sw','sp','swt','srs'],l:['S/wstg','S/%','S/wt','S/Rs'],t:'Sale making'},p:{f:['pw','pp','pwt','prs'],l:['P/wstg','P/%','P/wt','P/Rs'],t:'Purchase making'}},MGS=['pw','pp','pwt','prs','sw','sp','swt','srs'],MGK={pw:'p',sw:'s'};let MT={s:'sp',p:'pw'};
+const FIELDS=[['cat','Category','sel'],['item','Item','sel'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp','sel'],['size','Size'],['design','Design','sel'],['tunch','Tunch'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['lab','Labour /g'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['huid','HUID'],['mrp','MRP'],['rate','Rate'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier','sel']];
+const MG={s:{f:['sw','sp','swt','srs','srate'],l:['S/wstg','S/%','S/wt','S/Rs','S/rate'],t:'Sale making'},p:{f:['pw','pp','pwt','prs','prate'],l:['P/wstg','P/%','P/wt','P/Rs','P/rate'],t:'Purchase making'}},MGS=['pw','pp','pwt','prs','prate','sw','sp','swt','srs','srate'],MGK={pw:'p',sw:'s'};let MT={s:'sp',p:'pw'};
 const mgO=c=>c=='F'?F:ME.f,mgT=(g,o)=>MG[g].f.find(x=>n(o[x]))||MT[g];
 function mgHtml(g,c){const m=MG[g],o=mgO(c),t=mgT(g,o);return`<div id="mg-${g}${c=='F'?'':'m'}" style="grid-column:span 2"><label>${m.t}</label><div class="mgr"><select class="mgs" onchange="mgS('${g}','${c}',this.value)">${m.f.map((x,i)=>`<option value="${x}" ${x==t?'selected':''}>${m.l[i]}</option>`).join('')}</select><input class="mgv" inputmode="decimal" value="${hx(o[t]??'')}" oninput="mgV('${g}','${c}',this.value)"></div></div>`}
 window.mgS=(g,c,t)=>{const o=mgO(c),v=o[mgT(g,o)]??'';MG[g].f.forEach(x=>o[x]='');o[t]=v;MT[g]=t};
@@ -385,7 +384,7 @@ function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Aut
  return`<div${emp&&!fo&&!String(v).trim()?' class="ef"':''}><label>${l}</label>${o?`<select data-f="${f}">${f=='cat'?'':'<option value="">'+(o.length?'':'— none: add in Setting —')+'</option>'}${o.map(x=>`<option value="${x}" ${x==v?'selected':''}>${x}</option>`).join('')}</select>`:`<input data-f="${f}" value="${v}" ${f=='nw'?'readonly':''} oninput="sv('${f}',this.value,1)">`}</div>`};
  if(!editing&&!n(F.pcs))F.pcs='1';
  const fl=l=>l.map(f=>fh(FIELDS.find(x=>x[0]==f))).join('');
- const inp1=fl(['cat','item','supplier']),inp=fl(['pcs','stamp','tunch','pw','lab','sw','mrp','prate','srate']);
+ const inp1=fl(['cat','item','supplier']),inp=fl(['pcs','stamp','tunch','rate','pw','lab','sw','mrp']);
  const act=document.activeElement,af=act&&act.dataset?act.dataset.f:null;
  const ql=f=>FIELDS.find(x=>x[0]==f)[1];
  const fq=f=>fh(FIELDS.find(x=>x[0]==f));
@@ -402,7 +401,7 @@ function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Aut
 window.sv=(f,v,q)=>{if(f=='gw'||f=='less'){v=String(v).replace(/[^0-9.]/g,'').replace(/^(\d*\.\d*)\./,'$1');v=v.replace(/(\.\d{3})\d+/,'$1')}F[f]=v;if(f=='cat'){F.item=F.stamp=F.design=''}if(f=='item'){const it=S.items[k(v)];if(it)F.design='';preset()}if(f=='stamp')preset();
  if(f=='gw'||f=='less'){F.nw=Math.max(0,n(F.gw)-n(F.less)).toFixed(3);preset()}
  if(!q)render();else if(f=='gw'||f=='less'){const i=[...document.querySelectorAll('.grid input')];FIELDS.forEach(([ff],ix)=>{});document.querySelectorAll('input[data-f]').forEach(e=>e.value=F[e.dataset.f]??'');mgSync()}};
-function preset(){if(editing)return;const it=S.items[k(F.item||'')];if(!it||!it.rules)return;const w=n(F.nw);if(!w)return;const sn=x=>String(x||'').trim().toLowerCase(),st=sn(F.stamp),inr=r=>w>=n(r.min)&&w<n(r.max),r=(st&&it.rules.find(r=>inr(r)&&sn(r.stamp)==st))||it.rules.find(r=>inr(r)&&!sn(r.stamp));if(r){['sw','sp','swt','srs'].forEach(x=>F[x]='');F[r.type]=r.val}}
+function preset(){if(editing)return;const it=S.items[k(F.item||'')];if(!it||!it.rules)return;const w=n(F.nw);if(!w)return;if(n(F.srate)>0)return;const sn=x=>String(x||'').trim().toLowerCase(),st=sn(F.stamp),inr=r=>w>=n(r.min)&&w<n(r.max),r=(st&&it.rules.find(r=>inr(r)&&sn(r.stamp)==st))||it.rules.find(r=>inr(r)&&!sn(r.stamp));if(r){['sw','sp','swt','srs'].forEach(x=>F[x]='');F[r.type]=r.val}}
 window.nv=d=>{const l=vous();const i=l.indexOf(vou);const j=i<0?(d<0?l.length-1:-1):i+d;if(l[j]!=null)vou=l[j];render()};
 window.ed=t=>{editing=t;SHE=false;F={...S.tags[t]};render()};
 window.togE=()=>{SHE=!SHE;render()};
@@ -417,7 +416,7 @@ async function claimVou(){if(vClaimed===vou||vous().includes(vou)){vClaimed=vou;
 window.gen=async()=>{const it=S.items[k(F.item||'')];if(!it||!F.cat||(!n(F.gw)&&!(n(F.mrp)>0)))return alert('Category, item and gross weight (or MRP) are required');
  if(!n(F.gw)){F.gw='';F.less='';F.nw=''}
  if(F.stamp&&!opts('stamp').includes(F.stamp))F.stamp='';
- if(n(F.mrp)>0)['sw','sp','swt','srs'].forEach(x=>F[x]='');
+ if(n(F.mrp)>0)['sw','sp','swt','srs','srate'].forEach(x=>F[x]='');
  if(!n(F.pcs))F.pcs='1';
  let t;if(editing){const o=S.tags[editing];if(!o||o.status=='archived'){alert('Tag '+editing+' was deleted on another device, so it was not saved.');editing=null;F={cat:CATS[0]};render();return}
   const d={};Object.keys(F).forEach(x=>{if(['status','tagNo','ts','vou','vtype','printed'].includes(x))return;if(String(F[x]??'')!==String(o[x]??''))d[x]=F[x]});
@@ -540,15 +539,16 @@ const mk=v=>{v=String(v??'').trim();return n(v)?hx(v):''};
 const tagHit=(t,q)=>[t.tagNo,t.stamp,t.size,t.design,t.huid].some(v=>String(v??'').toLowerCase().includes(q));
 const tagCmp=(x,y)=>String(x.tagNo).localeCompare(String(y.tagNo),undefined,{numeric:true});
 function stF0(){return{stamp:'',size:'',design:'',mk:'',wmin:'',wmax:''}}
-const COLS=[['tagNo','Tag','t'],['gw','Gross','n'],['less','Less','n'],['nw','Net','n'],['pcs','Pcs','n'],['stamp','Stamp','t'],['size','Size','t'],['design','Design','t'],['huid','HUID','t'],['tunch','Pur Tunch','n','p'],['pm','Purchase making','n','p'],['lab','Pur Labour','n','p'],['sm','Sale making','n','s'],['mrp','MRP','n'],['vou','Vou','n']];
+const COLS=[['tagNo','Tag','t'],['gw','Gross','n'],['less','Less','n'],['nw','Net','n'],['pcs','Pcs','n'],['stamp','Stamp','t'],['size','Size','t'],['design','Design','t'],['huid','HUID','t'],['tunch','Pur Tunch','n','p'],['pm','Purchase making','n','p'],['lab','Pur Labour','n','p'],['sm','Sale making','n','s'],['rate','Rate','n','p'],['mrp','MRP','n'],['vou','Vou','n'],['fine','Fine','n']];
 const mkv=(t,g)=>{const f=MG[g=='pm'?'p':'s'].f.find(x=>n(t[x]));return f?{f,v:String(t[f]).trim()}:null};
-const TY=Object.fromEntries([['item','t'],['cat','t'],['c','n'],['g','n'],['n','n'],...COLS.map(c=>[c[0],c[2]])]);
-const hasMk=t=>['sw','sp','swt','srs'].some(f=>n(t[f]));
+const TY=Object.fromEntries([['item','t'],['cat','t'],['c','n'],['g','n'],['n','n'],['f','n'],...COLS.map(c=>[c[0],c[2]])]);
+const hasMk=t=>['sw','sp','swt','srs','srate'].some(f=>n(t[f]));
 const stFa=()=>Object.values(stF).some(v=>v!=='');
 const tagOK=t=>(!stF.stamp||t.stamp==stF.stamp)&&(!stF.size||String(t.size??'').trim()==stF.size)&&(!stF.design||t.design==stF.design)&&(!stF.mk||(stF.mk=='y')==hasMk(t))&&(stF.wmin===''||n(t.nw)>=n(stF.wmin))&&(stF.wmax===''||n(t.nw)<=n(stF.wmax));
-const srt=(l,s)=>l.slice().sort((x,y)=>{const g=(t,k)=>k=='pm'||k=='sm'?(mkv(t,k)||{v:0}).v:t[k],a=g(x,s.k),b=g(y,s.k);const r=TY[s.k]=='n'?n(a)-n(b):String(a??'').localeCompare(String(b??''),undefined,{numeric:true,sensitivity:'base'});return(r||tagCmp(x,y))*s.d});
+const srt=(l,s)=>l.slice().sort((x,y)=>{const g=(t,k)=>k=='fine'?fineOf(t):k=='pm'||k=='sm'?(mkv(t,k)||{v:0}).v:t[k],a=g(x,s.k),b=g(y,s.k);const r=TY[s.k]=='n'?n(a)-n(b):String(a??'').localeCompare(String(b??''),undefined,{numeric:true,sensitivity:'base'});return(r||tagCmp(x,y))*s.d});
 const arw=(s,c)=>`<span class="ar">${s.k==c?(s.d>0?'▲':'▼'):'⇅'}</span>`;
-const cell=(t,c)=>c=='pm'||c=='sm'?(m=>m?hx(MG[c=='pm'?'p':'s'].l[MG[c=='pm'?'p':'s'].f.indexOf(m.f)]+' '+m.v):'')(mkv(t,c)):c=='pcs'&&!n(t.pcs)?'1':c=='vou'?(t.vou?'V'+hx(t.vou):''):['less','pcs','pw','lab','sw','sp','swt','srs','mrp'].includes(c)?mk(t[c]):hx(t[c]);
+const fineOf=t=>n(t.tunch)?n(t.nw)*n(t.tunch)/100:0;
+const cell=(t,c)=>c=='fine'?(fineOf(t)?fineOf(t).toFixed(3):''):c=='pm'||c=='sm'?(m=>m?hx(MG[c=='pm'?'p':'s'].l[MG[c=='pm'?'p':'s'].f.indexOf(m.f)]+' '+m.v):'')(mkv(t,c)):c=='pcs'&&!n(t.pcs)?'1':c=='vou'?(t.vou?'V'+hx(t.vou):''):['less','pcs','pw','lab','sw','sp','swt','srs','mrp'].includes(c)?mk(t[c]):hx(t[c]);
 let stEmp=false,stVis=[],stBk=null,stBf={stamp:'',supp:'',mt:'sp',mv:''};const stSel=new Set();
 window.stEm=()=>{stEmp=!stEmp;stR()};
 window.stSelT=(no,on)=>{on?stSel.add(no):stSel.delete(no);stR()};
@@ -568,17 +568,17 @@ function stSelBar(){if(!stSel.size)return'';const cats=[...new Set([...stSel].ma
 function stTable(l,si,cap){const all=(si?[['item','Item','t']]:[]).concat(COLS),s=stSD;l=srt(l,s);if(cap)l=l.slice(0,cap);stVis=l.map(t=>t.tagNo);
  const emp=si?[]:all.filter(c=>c[0]!='tagNo'&&c[0]!='pcs'&&!l.some(t=>String(cell(t,c[0])??'').trim()!==''));
  const cols=stEmp?all:all.filter(c=>!emp.includes(c)),allSel=l.length&&l.every(t=>stSel.has(t.tagNo));
- const sm=f=>l.reduce((x,t)=>x+n(t[f]),0),pcs=l.reduce((x,t)=>x+(n(t.pcs)||1),0),tot=c=>c=='tagNo'||c=='item'?'Total · '+l.length:c=='gw'||c=='nw'?sm(c).toFixed(3):c=='less'?(sm('less')?sm('less').toFixed(3):''):c=='pcs'?String(pcs):'';
- const cards=`<div class="stcs"><label><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"> All</label><select onchange="stSk(this.value)">${all.map(c=>`<option value="${c[0]}" ${s.k==c[0]?'selected':''}>Sort: ${c[1]}</option>`).join('')}</select><button onclick="stSo('D','${s.k}')">${s.d>0?'↑':'↓'}</button></div><div class="stc">${l.map(t=>{const pm=cell(t,'pm'),sm2=cell(t,'sm'),no=hx(t.tagNo),l2=[t.stamp,t.size&&'Size '+t.size,t.design,n(t.gw)!=n(t.nw)?'Gross '+n(t.gw).toFixed(3):''].filter(Boolean).map(hx).join(' · ');return`<div class="stcd" data-t="${no}" onclick="stEd(this.dataset.t)"><label class="ckb" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${no}" onchange="stSelT(this.dataset.t,this.checked)"></label><div class="l1"><b>${no}</b>${si?`<span>${hx(t.item)}</span>`:''}<span class="nw">${n(t.nw).toFixed(3)} g</span></div>${l2?`<div class="l2">${l2}</div>`:''}${pm||sm2?`<div class="l3">${pm?`<span class="pur">${pm}</span>`:''}${sm2?`<span class="sal">${sm2}</span>`:''}</div>`:''}</div>`}).join('')}<div class="sttot">Total · ${l.length} tags · Gross ${sm('gw').toFixed(3)} · Net ${sm('nw').toFixed(3)} · Pcs ${pcs}</div></div>`;
+ const sm=f=>l.reduce((x,t)=>x+n(t[f]),0),pcs=l.reduce((x,t)=>x+(n(t.pcs)||1),0),tot=c=>c=='tagNo'||c=='item'?'Total · '+l.length:c=='gw'||c=='nw'?sm(c).toFixed(3):c=='less'?(sm('less')?sm('less').toFixed(3):''):c=='pcs'?String(pcs):c=='fine'?l.reduce((x,t)=>x+fineOf(t),0).toFixed(3):'';
+ const cards=`<div class="stcs"><label><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"> All</label><select onchange="stSk(this.value)">${all.map(c=>`<option value="${c[0]}" ${s.k==c[0]?'selected':''}>Sort: ${c[1]}</option>`).join('')}</select><button onclick="stSo('D','${s.k}')">${s.d>0?'↑':'↓'}</button></div><div class="stc">${l.map(t=>{const pm=cell(t,'pm'),sm2=cell(t,'sm'),no=hx(t.tagNo),l2=[t.stamp,t.size&&'Size '+t.size,t.design,n(t.gw)!=n(t.nw)?'Gross '+n(t.gw).toFixed(3):''].filter(Boolean).map(hx).join(' · ');return`<div class="stcd" data-t="${no}" onclick="stEd(this.dataset.t)"><label class="ckb" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${no}" onchange="stSelT(this.dataset.t,this.checked)"></label><div class="l1"><b>${no}</b>${si?`<span>${hx(t.item)}</span>`:''}<span class="nw">${n(t.nw).toFixed(3)} g</span></div>${l2?`<div class="l2">${l2}</div>`:''}${pm||sm2?`<div class="l3">${pm?`<span class="pur">${pm}</span>`:''}${sm2?`<span class="sal">${sm2}</span>`:''}</div>`:''}</div>`}).join('')}<div class="sttot">Total · ${l.length} tags · Gross ${sm('gw').toFixed(3)} · Net ${sm('nw').toFixed(3)} · Pcs ${pcs} · Fine ${l.reduce((x,t)=>x+fineOf(t),0).toFixed(3)}</div></div>`;
  return stSelBar()+`<div class="tw dtl"><table><tr class="g2"><th class="ck"><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"></th>${cols.map(([c,t,y,g])=>`<th class="s${y=='n'?' num':''}${g=='p'?' pur':g=='s'?' sal':''}${s.k==c?' act':''}" onclick="stSo('D','${c}')">${t}${arw(s,c)}</th>`).join('')}</tr>${l.map(t=>`<tr class="r" data-t="${hx(t.tagNo)}" onclick="stEd(this.dataset.t)"><td class="ck" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${hx(t.tagNo)}" onchange="stSelT(this.dataset.t,this.checked)"></td>${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${cell(t,c)}</td>`).join('')}</tr>`).join('')}<tr class="tot"><td></td>${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${tot(c)}</td>`).join('')}</tr></table></div>${emp.length?`<button class="emb" onclick="stEm()">${stEmp?'▾ Hide':'▸ Show'} empty columns (${emp.length}): ${emp.map(c=>c[1]).join(', ')}</button>`:''}${cards}`}
 const chips=(c,g,nn,lab)=>`<div class="chips">${lab?`<span class="chip cat">${hx(lab)}</span>`:''}<span class="chip"><b>${c}</b> tags</span><span class="chip">Gross <b>${g.toFixed(3)}</b></span><span class="chip">Net <b>${nn.toFixed(3)}</b></span></div>`;
 const catChips=rows=>{const g={};rows.forEach(r=>{const x=g[r.cat]=g[r.cat]||{c:0,g:0,n:0};x.c+=r.c;x.g+=r.g;x.n+=r.n});return[...CATS,...Object.keys(g).filter(c=>!CATS.includes(c))].filter(c=>g[c]).map(c=>chips(g[c].c,g[c].g,g[c].n,c)).join('')};
 function stT(){const q=stQ.trim().toLowerCase(),L=live().filter(tagOK),sum=f=>l=>l.reduce((s,t)=>s+n(t[f]),0);
  if(stI!=null){const l=L.filter(t=>t.item==stI&&(!q||tagHit(t,q)));return chips(l.length,sum('gw')(l),sum('nw')(l),l[0]&&l[0].cat)+(l.length?stTable(l,0):'<p class="mut">No tags match.</p>')}
- const by={};L.forEach(t=>{if(filt&&t.cat!=filt)return;const b=by[t.item]=by[t.item]||{item:t.item,cat:t.cat,c:0,g:0,n:0};b.c++;b.g+=n(t.gw);b.n+=n(t.nw)});
+ const by={};L.forEach(t=>{if(filt&&t.cat!=filt)return;const b=by[t.item]=by[t.item]||{item:t.item,cat:t.cat,c:0,g:0,n:0,f:0};b.c++;b.g+=n(t.gw);b.n+=n(t.nw);b.f+=n(t.tunch)?n(t.nw)*n(t.tunch)/100:0});
  const rows=srt(Object.values(by).filter(r=>!q||String(r.item).toLowerCase().includes(q)).map(r=>({...r,tagNo:r.item})),stSL),s=stSL;
  const th=(c,t,y)=>`<th class="s${y?' num':''}${s.k==c?' act':''}" onclick="stSo('L','${c}')">${t}${arw(s,c)}</th>`;
- let h=catChips(rows)+(rows.length?`<div class="tw"><table><tr>${th('item','Item')}${th('cat','Category')}${th('c','Tags',1)}${th('g','Gross',1)}${th('n','Net',1)}</tr>${rows.map(r=>`<tr class="r" data-i="${hx(r.item)}" onclick="stO(this.dataset.i)"><td>${hx(r.item)}</td><td>${cbg(r.cat)}</td><td class="num">${r.c}</td><td class="num">${r.g.toFixed(3)}</td><td class="num">${r.n.toFixed(3)}</td></tr>`).join('')}<tr class="tot"><td>Total · ${rows.length} items</td><td></td><td class="num">${rows.reduce((x,r)=>x+r.c,0)}</td><td class="num">${rows.reduce((x,r)=>x+r.g,0).toFixed(3)}</td><td class="num">${rows.reduce((x,r)=>x+r.n,0).toFixed(3)}</td></tr></table></div>`:'<p class="mut">No items match.</p>');
+ let h=(rows.length?`<div class="tw"><table><tr>${th('item','Item')}${th('cat','Category')}${th('c','Tags',1)}${th('g','Gross',1)}${th('n','Net',1)}${th('f','Fine',1)}</tr>${rows.map(r=>`<tr class="r" data-i="${hx(r.item)}" onclick="stO(this.dataset.i)"><td>${hx(r.item)}</td><td>${cbg(r.cat)}</td><td class="num">${r.c}</td><td class="num">${r.g.toFixed(3)}</td><td class="num">${r.n.toFixed(3)}</td><td class="num">${r.f.toFixed(3)}</td></tr>`).join('')}<tr class="tot"><td>Total · ${rows.length} items</td><td></td><td class="num">${rows.reduce((x,r)=>x+r.c,0)}</td><td class="num">${rows.reduce((x,r)=>x+r.g,0).toFixed(3)}</td><td class="num">${rows.reduce((x,r)=>x+r.n,0).toFixed(3)}</td><td class="num">${rows.reduce((x,r)=>x+r.f,0).toFixed(3)}</td></tr></table></div>`:'<p class="mut">No items match.</p>');
  if(q){const l=L.filter(t=>(!filt||t.cat==filt)&&tagHit(t,q));if(l.length)h+=`<h4>Matching tags (${l.length}${l.length>200?', showing first 200':''})</h4>`+stTable(l,1,200)}
  return h}
 function stFB(){const base=live().filter(t=>stI!=null?t.item==stI:(!filt||t.cat==filt));
@@ -598,7 +598,7 @@ window.stO=i=>{stBk={F:{...stF},Q:stQ,open:stOpen,y:scrollY};stSel.clear();stI=i
 let ME=null;
 window.stEd=no=>{const t=S.tags[no];if(!t)return;ME={no,o:t,f:{...t}};stMo()};
 const ruleFor=(it,stamp,w)=>{if(!it||!it.rules||!it.rules.length||!w)return null;const sn=x=>String(x||'').trim().toLowerCase(),st=sn(stamp),inr=r=>w>=n(r.min)&&w<n(r.max);return(st&&it.rules.find(r=>inr(r)&&sn(r.stamp)==st))||it.rules.find(r=>inr(r)&&!sn(r.stamp))||null};
-function stRH(){if(!ME)return'';const f=ME.f,t=ME.o,it=S.items[k(f.item||t.item||'')],w=n(f.nw);if(!it||!it.rules||!it.rules.length||!w)return'';const rl=ruleFor(it,f.stamp,w),cur=MG.s.f.find(x=>n(f[x])),lb=r=>MG.s.l[MG.s.f.indexOf(r.type)]+' '+hx(r.val),rg=r=>hx(r.min)+'–'+(n(r.max)>=9999?'∞':hx(r.max))+' g'+(r.stamp?' · '+hx(r.stamp):'');
+function stRH(){if(!ME)return'';const f=ME.f,t=ME.o,it=S.items[k(f.item||t.item||'')],w=n(f.nw);if(!it||!it.rules||!it.rules.length||!w||n(f.srate)>0)return'';const rl=ruleFor(it,f.stamp,w),cur=MG.s.f.find(x=>n(f[x])),lb=r=>MG.s.l[MG.s.f.indexOf(r.type)]+' '+hx(r.val),rg=r=>hx(r.min)+'–'+(n(r.max)>=9999?'∞':hx(r.max))+' g'+(r.stamp?' · '+hx(r.stamp):'');
  if(!rl)return`<div class="rhint w">⚠ No making rule covers ${w} g${f.stamp?' for '+hx(f.stamp):''} — enter making by hand</div>`;
  return cur==rl.type&&n(f[cur])==n(rl.val)?`<div class="rhint ok">✓ Matches rule ${lb(rl)} (${rg(rl)})</div>`:`<div class="rhint">Rule for this weight: <b>${lb(rl)}</b> (${rg(rl)}) <button onclick="stRule()">Use rule</button></div>`}
 window.stRule=()=>{if(!ME)return;const t=ME.o,it=S.items[k(ME.f.item||t.item||'')],rl=ruleFor(it,ME.f.stamp,n(ME.f.nw));if(!rl)return;MG.s.f.forEach(x=>ME.f[x]='');ME.f[rl.type]=rl.val;stMo()};
@@ -617,7 +617,7 @@ window.stMi=(x,v)=>{ME.f[x]=v;setTimeout(()=>{const e=$('#rh');if(e)e.innerHTML=
 window.stMc=()=>{const m=$('#mo');if(m)m.remove();ME=null};
 const stKeep=async fn=>{const y=scrollY,sc=$('#stt .tw'),sy=sc?sc.scrollTop:0;await fn();const s2=$('#stt .tw');if(s2)s2.scrollTop=sy;scrollTo(0,y)};
 window.stMs=async pr=>{if(!ME)return;if(!n(ME.f.gw)&&!(n(ME.f.mrp)>0))return alert('Gross weight (or MRP) is required');
- if(n(ME.f.mrp)>0)['sw','sp','swt','srs'].forEach(x=>ME.f[x]='');
+ if(n(ME.f.mrp)>0)['sw','sp','swt','srs','srate'].forEach(x=>ME.f[x]='');
  const d={};Object.keys(ME.f).forEach(x=>{if(String(ME.f[x]??'')!==String(ME.o[x]??''))d[x]=ME.f[x]});const no=ME.no;
  const ni=ME.f.item!=ME.o.item?S.items[k(ME.f.item)]:null;let newT=null;
  if(ni){const oi=S.items[k(ME.o.item||'')];const op=String(no).replace(/\d+$/,'');
@@ -659,9 +659,10 @@ const tb=['stamps','designs','items','layout','print'].map(x=>`<button class="${
  if(sub=='items')h=itemsUI();
  if(sub=='suppliers')h=suppliersUI();
  if(sub=='backup')h=backupUI();
+ if(sub=='rateimp')h=rateImpUI();
  if(sub=='layout')h=layoutUI();
  if(sub=='print'){const c=S.cfg.nudge||{x:0,y:0};h=devCard()+`<div class="grid"><div><label>Nudge X (mm)</label><input id="nx" value="${c.x}"></div><div><label>Nudge Y (mm)</label><input id="ny" value="${c.y}"></div><div><label>Helper URL</label><input id="pu" value="${(S.cfg.prn||{}).url||'http://localhost:9101'}"></div><div><label>Gap (mm)</label><input id="pg" value="${(S.cfg.prn||{}).gap??3}"></div><div><label>Direction (0/1)</label><input id="pd" value="${(S.cfg.prn||{}).dir??1}"></div><div><label>Font</label><input id="pf" value="${(S.cfg.prn||{}).font||'Cambria'}"></div><div><label>Text size (dots)</label><input id="pz" value="${(S.cfg.prn||{}).px||19}"></div><div><label>Invert bitmap (0/1)</label><input id="pi" value="${(S.cfg.prn||{}).inv||0}"></div><div><label>Shift up/down (dots)</label><input id="psh" value="${(S.cfg.prn||{}).sh??14}"></div><div><label>Darkness (0-15)</label><input id="pk" value="${(S.cfg.prn||{}).den??8}"></div><div><label>Speed (1-5)</label><input id="ps" value="${(S.cfg.prn||{}).spd??3}"></div></div><div class="bar"><button class="p" onclick="saveN()">Save</button><button onclick="pingHelper()">Check helper</button><button onclick="rulerPrint()">Ruler test</button><button onclick="verifyLayout()">Verify layout</button><button onclick="printTags([{cat:CATS[0],tagNo:'GRG1',gw:1,nw:1,size:'10',stamp:'18K',name:'TEST'}])">Test print</button></div><div class="card"><b>Backup</b><div class="bar"><button onclick="exportDB()">Export backup</button><input type="file" id="jf" accept=".json" style="width:auto"><button onclick="importDB()">Restore</button></div></div><div class="card"><b>Import product_data.xlsx</b><br><input type="file" id="xf" accept=".xlsx"><div class="bar"><button class="p" onclick="imp()">Import</button><span id="ist"></span></div></div><div class="card" style="border-color:#e4b7b3"><b style="color:var(--red)">Delete all stock</b><p class="mut" style="margin:4px 0 8px">Removes every tag from stock so you can enter or import them again. A full backup file downloads first. Items, stamps, designs, layout, settings and next-number counters are kept.</p><button class="d" onclick="delAllStock()">Delete all stock…</button></div>`}
- const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making rules — list &amp; quick sheet'],suppliers:['🏭','Suppliers','Supplier list used on tags'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import'],backup:['💾','Auto Backup','Save a copy to a folder on a schedule']};
+ const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making rules — list &amp; quick sheet'],suppliers:['🏭','Suppliers','Supplier list used on tags'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import'],backup:['💾','Auto Backup','Save a copy to a folder on a schedule'],rateimp:['📥','Rate Import','TEMPORARY — import rates and dates from Excel']};
  if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}<div class="tile" tabindex="0" role="button" onclick="refreshApp()" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">🔄</span><span><b>Refresh</b><small>Reload the app to get the latest version and data</small></span></div></div>`;return}
  a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv();if(sub=='backup')abStatus();if(sub=='items'&&IV=='sheet'&&!IE)qsBuild()}
 window.CATS=CATS;window.printTags=printTags;window.rm=async(p,key)=>{if(confirm('Remove?'))await set(R(p+'/'+key),null)};
@@ -678,6 +679,36 @@ function itemsUI(){if(!IE){const tg=`<div class="bar"><button class="${IV=='list
 window.tg=(d,c)=>{IE.designs=IE.designs||[];c?IE.designs.push(d):IE.designs=IE.designs.filter(x=>x!=d)};
 window.ieFix=()=>{IE.rules=qsFixRules(IE.rules);IEO=1;render()};
 window.saveI=async force=>{if(!IE)return;IE.name=(IE.name||'').trim();IE.prefix=(IE.prefix||'').trim();if(!IE.name||!IE.prefix)return alert('Name and prefix required');const dup=Object.values(S.items).find(i=>i.prefix==IE.prefix&&i.name!=IE.name);if(dup)return alert('Prefix already used by '+dup.name);const old=S.items[k(IE.name)];if(old&&old.prefix&&old.prefix!=IE.prefix&&!confirm('Prefix changes from '+old.prefix+' to '+IE.prefix+'.\n\nNew tags of this item will use '+IE.prefix+'. Tags already made keep their numbers.'))return;IE.rules=IE.rules||[];const cfe=qsConf(IE.rules);if(cfe.length)return bnShow('ieb','<b>⚠ Conflicting making rules — not saved</b><br>'+cfe.map(hx).join('<br>')+'<br>Two rules for the same stamp cover the same weight. A range includes its From weight, not its To weight.',1);const gpe=qsGaps(IE.rules);if(gpe.length&&force!==1)return bnShow('ieb','<b>⚠ Gaps in weight ranges</b> — no making will auto-fill there<br>'+gpe.map(hx).join('<br>')+'<br><button onclick="ieFix()">⇥ Close gaps</button><button onclick="saveI(1)">Save anyway</button>');await set(R('items/'+k(IE.name)),IE);toast('✓ Item saved');IE=null};
+/* ===== TEMP RATE IMPORT — start (one-time port of MMI rates + dates onto tags already in stock; delete this block, the 'rateimp' tile in SI and the 'rateimp' line in settings() when finished) ===== */
+const rateImpUI=()=>`<p class="mut" style="margin:0 0 8px">TEMPORARY one-time tool. Excel columns: <b>Tag No, Item Name, Rate, Date</b>. Only tags already in stock are changed. Gold and Silver tags get the <b>Rate</b> field, 925 Silver tags get the <b>PRATE</b> field. The Date becomes the tag's date, so you can tell how old each piece of stock is.</p><input type="file" id="rif" accept=".xlsx,.xls"><div class="bar"><button class="p" onclick="rateImp()">Import rates</button><span id="ris"></span></div>`;
+function _riDate(v){if(v==null||v==='')return'';if(typeof v=='number'){return v>20000&&v<80000?new Date(Math.round((v-25569)*864e5)).toISOString().slice(0,10):''}
+ const t=String(v).trim();let m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+ m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/);if(m)return(m[3].length==2?'20'+m[3]:m[3])+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
+window.rateImp=async()=>{const f=$('#rif').files[0],st=$('#ris');if(!f)return alert('Choose the Excel file first');
+ let rows;try{const wb=XLSX.read(await f.arrayBuffer());rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''})}catch(e){return alert('Could not read that file')}
+ const nm=h=>String(h==null?'':h).trim().toLowerCase();let hr=-1;for(let i=0;i<Math.min(rows.length,30);i++){if((rows[i]||[]).map(nm).some(c=>['tag no','tagno','barcode'].includes(c))){hr=i;break}}
+ if(hr<0)return alert('Tag No column not found');
+ const H=rows[hr].map(nm),fc=a=>H.findIndex(h=>a.includes(h)),cT=fc(['tag no','tagno','barcode']),cN=fc(['item name','name','item']),cR=fc(['rate']),cD=fc(['date','tag date','vou date','vou date.','voucher date']);
+ if(cR<0)return alert('Rate column not found');
+ const map={};Object.entries(S.tags||{}).forEach(([kk,t])=>{if(t&&t.status!='archived')map[String(t.tagNo||kk).trim().toUpperCase()]=kk});
+ const num=v=>{const x=parseFloat(String(v==null?'':v).replace(/,/g,''));return isNaN(x)?0:x};
+ const ch=[],nf=[],nr=[],nd=[],dup=[];let g=0,p9=0,wd=0,nod=0,hadTs=0;const seen={};
+ for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[],no=String(r[cT]==null?'':r[cT]).trim().toUpperCase();if(!no||/^(GRAND\s+)?TOTAL\b/.test(no))continue;
+  if(seen[no])dup.push(no);seen[no]=1;const key=map[no];if(!key){nf.push(no);continue}
+  const t=S.tags[key],v=num(r[cR]);if(!(v>0)){nr.push(no);continue}
+  const is9=t.cat==CATS[2],field=is9?'prate':'rate',val=String(Math.round(v*100)/100);
+  if(cN>=0){const a=nm(r[cN]),b=nm(t.item||t.name);if(a&&b&&a!=b)nd.push(no)}
+  const d=cD>=0?_riDate(r[cD]):'';let ts=0;if(d){const[y,m,dd]=d.split('-').map(Number);ts=new Date(y,m-1,dd,12).getTime();wd++;if(+t.ts>0)hadTs++}else nod++;
+  if(is9)p9++;else g++;ch.push({key,field,val,ts})}
+ if(!ch.length){st.textContent='Nothing to import';return alert('Nothing to import: no tag in the sheet matched a tag in stock with a rate.'+(nf.length?'\n\nNot in stock: '+nf.length:''))}
+ const L=a=>a.slice(0,12).join(', ')+(a.length>12?' …':'');
+ const msg=['Update '+ch.length+' tags in stock?','',g+' Gold/Silver tags → Rate field',p9+' 925 Silver tags → PRATE field',wd+' tag dates set'+(hadTs?' ('+hadTs+' of them already had a date, it will be replaced)':'')+(nod?'; '+nod+' rows without a readable date keep their old date':''),
+  nf.length?'\nNot in stock, skipped ('+nf.length+'): '+L(nf):'',nr.length?'\nNo rate, skipped ('+nr.length+'): '+L(nr):'',nd.length?'\nItem name differs from stock, imported anyway ('+nd.length+'): '+L(nd):'',dup.length?'\nRepeated tag rows, last one wins ('+dup.length+')':''].filter(x=>x!=='').join('\n');
+ if(!confirm(msg))return;
+ st.textContent='Writing '+ch.length+' tags…';const b={};ch.forEach(c=>{b['tags/'+c.key+'/'+c.field]=c.val;if(c.ts)b['tags/'+c.key+'/ts']=c.ts});
+ const ks=Object.keys(b);for(let i=0;i<ks.length;i+=1000)await update(R(''),Object.fromEntries(ks.slice(i,i+1000).map(x=>[x,b[x]])));
+ const done='Done — '+ch.length+' tags updated ('+g+' Rate, '+p9+' PRATE, '+wd+' dates).';st.textContent=done;alert(done)};
+/* ===== TEMP RATE IMPORT — end ===== */
 window.imp=async()=>{const f=$('#xf').files[0];if(!f)return;const rows=XLSX.utils.sheet_to_json(XLSX.read(await f.arrayBuffer()).Sheets.Sheet1,{defval:'',raw:false});const st=$('#ist');
  const catOf=r=>/^925/.test(r['Item Name'])||r.Stamp=='S925'?CATS[2]:(r.Stamp=='S7'||/^S /.test(r['Item Name']))?CATS[1]:CATS[0];
  const items={},stamps={},designs={},tags={},cnt={},bad=[],supMap={};
