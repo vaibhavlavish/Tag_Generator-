@@ -196,7 +196,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .hq{margin:0 0 12px}.hq>input{width:100%;box-sizing:border-box}.hq-l{background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:6px;overflow:hidden;box-shadow:var(--sh)}.hq-r{display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-bottom:1px solid #efe6d0;cursor:pointer}.hq-r:last-child{border-bottom:0}.hq-r:hover{background:#f6ebcb}.hq-r b{color:var(--gold)}.hq-r span{color:var(--mut);font-size:13px}
 .attn{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);margin:12px 0;overflow:hidden}.at-t{padding:10px 14px;background:#f3ead3;font-size:13.5px}.at-r{display:flex;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid #efe6d0;cursor:pointer}.at-r span:nth-child(2){flex:1}.at-r:hover{background:#fffaf0}
 .efold{display:block!important;width:100%;box-sizing:border-box;text-align:left;margin:12px 0 0;padding:12px 14px;border:1px dashed var(--gold2);border-radius:10px;background:#fffaf0;color:var(--gold);font-weight:600;font-size:14px;line-height:1.4;height:auto}
-.tw td.ec{padding:3px 4px;background:#fffaf0}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
+.tw td.ec{padding:3px 4px;background:#fffaf0}.tw td.ec .mgr{min-width:150px}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="hdTap()" onkeydown="if(event.key=='Enter')hdTap()">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
@@ -584,9 +584,10 @@ const cell=(t,c)=>c=='cost'?(costOf(t)?costOf(t).toFixed(2):''):c=='tdate'?fmtD(
 let stEL=false,stEmp=false,stVis=[],stBk=null,stBf={stamp:'',supp:'',mt:'sp',mv:''};const stSel=new Set();
 window.stEm=()=>{stEmp=!stEmp;stR()};
 /* ---- Edit list: fill empty cells straight in the stock table ---- */
-const EDC=['gw','less','pcs','stamp','size','design','huid','tunch','lab','rate','mrp'];
+const EDC=['gw','less','pcs','stamp','size','design','huid','tunch','pm','lab','rate','mrp'];
 const stEE=(t,c)=>EDC.includes(c);
 const stEI=(t,c)=>{const no=hx(t.tagNo);
+ if(c=='pm'){const m=mkv(t,'pm'),ty=m?m.f:MT.p;return`<div class="mgr" data-t="${no}"><select class="mgs" onchange="stPm(this)">${MG.p.f.map((x,i)=>`<option value="${x}" ${x==ty?'selected':''}>${MG.p.l[i]}</option>`).join('')}</select><input class="ei" data-t="${no}" data-c="pm" inputmode="decimal" value="${hx(m?m.v:'')}" onchange="stPm(this)"></div>`}
  if(c=='stamp'||c=='design'){let o;if(c=='stamp')o=Object.values(S.stamps||{}).filter(x=>stC(x).includes(t.cat)).map(x=>x.name);else{const it=S.items[k(t.item||'')];o=it&&it.designs?it.designs:Object.values(S.designs||{}).filter(d=>(d.cats||[]).includes(t.cat)).map(d=>d.name)}
   const cv=String(t[c]??'').trim();if(cv&&!o.includes(cv))o=[...o,cv];
   return`<select class="ei" data-t="${no}" data-c="${c}" onchange="stCe(this.dataset.t,'${c}',this.value)"><option value=""></option>${o.map(y=>`<option value="${hx(y)}" ${y==cv?'selected':''}>${hx(y)}</option>`).join('')}</select>`}
@@ -599,7 +600,7 @@ document.addEventListener('focusin',e=>{const x=e.target;if(x.classList&&x.class
 document.addEventListener('keydown',e=>{const x=e.target;if(!x.classList||!x.classList.contains('ei')||x.tagName!='INPUT'||e.altKey||e.ctrlKey||e.metaKey)return;
  const dn=e.key=='ArrowDown'||(e.key=='Enter'&&!e.shiftKey),up=e.key=='ArrowUp'||(e.key=='Enter'&&e.shiftKey);if(!dn&&!up)return;
  const col=stAll().filter(i=>i.dataset.c==x.dataset.c&&i.tagName=='INPUT'),i=col.indexOf(x),nx=col[i+(dn?1:-1)];e.preventDefault();
- if(nx){nx.focus();nx.select()}else x.blur()});
+ if(nx){stFo={no:nx.dataset.t,c:nx.dataset.c,at:Date.now()};nx.focus();nx.select()}else x.blur()});
 const stRF=()=>{if(!stFo||Date.now()-stFo.at>2500||view!='stock'||!stEL)return;const a=document.activeElement;if(a&&a!=document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;
  const e=stAll().find(i=>i.dataset.t==stFo.no&&i.dataset.c==stFo.c);if(e){e.focus();if(e.select)e.select()}};
 {const r0=render;render=function(){r0.apply(this,arguments);stRF()}}
@@ -608,6 +609,10 @@ window.stEL_=()=>{stEL=!stEL;stSel.clear();render()};
 window.stCe=async(no,c,v)=>{const t=S.tags[no];if(!t)return;v=String(v).trim();if(v===String(t[c]??'').trim())return;
  const d={[c]:v};
  if(c=='gw'||c=='less'){const g=n(c=='gw'?v:t.gw),l=n(c=='less'?v:t.less);d.nw=Math.max(0,g-l).toFixed(3)}
+ await stKeep(async()=>{await update(R('tags/'+no),d)});toast('✓ Saved '+no)};
+
+window.stPm=async el=>{const w=el.closest('.mgr'),no=w.dataset.t,t=S.tags[no];if(!t)return;const ty=w.querySelector('select').value,v=w.querySelector('input').value.trim(),d={};MG.p.f.forEach(x=>d[x]='');d[ty]=v;
+ if(MG.p.f.every(x=>String(t[x]??'').trim()==d[x]))return;
  await stKeep(async()=>{await update(R('tags/'+no),d)});toast('✓ Saved '+no)};
 
 window.stSelT=(no,on)=>{on?stSel.add(no):stSel.delete(no);stR()};
