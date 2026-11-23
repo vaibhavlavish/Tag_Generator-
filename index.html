@@ -196,6 +196,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .hq{margin:0 0 12px}.hq>input{width:100%;box-sizing:border-box}.hq-l{background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:6px;overflow:hidden;box-shadow:var(--sh)}.hq-r{display:flex;gap:12px;align-items:baseline;padding:10px 12px;border-bottom:1px solid #efe6d0;cursor:pointer}.hq-r:last-child{border-bottom:0}.hq-r:hover{background:#f6ebcb}.hq-r b{color:var(--gold)}.hq-r span{color:var(--mut);font-size:13px}
 .attn{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);margin:12px 0;overflow:hidden}.at-t{padding:10px 14px;background:#f3ead3;font-size:13.5px}.at-r{display:flex;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid #efe6d0;cursor:pointer}.at-r span:nth-child(2){flex:1}.at-r:hover{background:#fffaf0}
 .efold{display:block!important;width:100%;box-sizing:border-box;text-align:left;margin:12px 0 0;padding:12px 14px;border:1px dashed var(--gold2);border-radius:10px;background:#fffaf0;color:var(--gold);font-weight:600;font-size:14px;line-height:1.4;height:auto}
+.tw td.ec{padding:3px 4px;background:#fffaf0}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
 </style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="hdTap()" onkeydown="if(event.key=='Enter')hdTap()">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
@@ -359,7 +360,7 @@ const CATS=['GOLD JEWELLERY','SILVER JEWELLERY','925 SILVER JEWELLERY'];const CS
 let S={stamps:{},designs:{},items:{},suppliers:{},tags:{},counters:{},cfg:{}},view='home',sub=null,vou=null,mode='auto',F={},editing=null,filt='';
 let QK=['gw','nw','huid','size','design'],FG=false,QB=0,stI=null,stQ='',RP={rows:[''],st:{},msg:''},stSL={k:'item',d:1},stSD={k:'tagNo',d:1},stF=stF0();
 
-window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;SHE=false;vou=null;F=lfLoad()||{cat:CATS[0]};editing=null}render()};
+window.go=v=>{view=v;if(v=='settings')sub=null;if(v=='stock'){stEL=false;stI=null;stQ='';stF=stF0();stOpen=false}if(v=='auto'||v=='bulk'){mode=v;SHE=false;vou=null;F=lfLoad()||{cat:CATS[0]};editing=null}render()};
 /* Remember the last entered fields (category, item, supplier, stamp, tunch, making...) on this device, so leaving Auto/Bulk and coming back does not mean typing them all again. Per-tag values (gross, less, net, HUID) are never remembered. */
 const LF_KEY='tg_last_fields';
 function lfSave(){if(editing)return;try{const o={...F};['gw','less','nw','huid'].forEach(x=>o[x]='');lss(LF_KEY,JSON.stringify({F:o,ts:Date.now()}))}catch(e){}}
@@ -580,8 +581,35 @@ const labOf=t=>n(t.lpc)?(n(t.pcs)||1)*n(t.lpc):n(t.nw)*n(t.lab);
 const costOf=t=>n(t.prate)?n(t.nw)*n(t.prate):n(t.ppc)?(n(t.pcs)||1)*n(t.ppc):n(t.rate)?(n(t.nw)*(n(t.tunch)+n(t.pw))/100)*n(t.rate)+labOf(t):0;
 const fmtD=ts=>{if(!(+ts>0))return'';const d=new Date(+ts);return String(d.getDate()).padStart(2,'0')+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+d.getFullYear()};
 const cell=(t,c)=>c=='cost'?(costOf(t)?costOf(t).toFixed(2):''):c=='tdate'?fmtD(t.ts):c=='fine'?(fineOf(t)?fineOf(t).toFixed(3):''):c=='pm'||c=='sm'?(m=>m?hx(MG[c=='pm'?'p':'s'].l[MG[c=='pm'?'p':'s'].f.indexOf(m.f)]+' '+m.v):'')(mkv(t,c)):c=='pcs'&&!n(t.pcs)?'1':c=='lab'&&n(t.lpc)?mk(t.lpc)+'/pc':c=='vou'?(t.vou?'V'+hx(t.vou):''):['less','pcs','pw','lab','sw','sp','swt','srs','mrp'].includes(c)?mk(t[c]):hx(t[c]);
-let stEmp=false,stVis=[],stBk=null,stBf={stamp:'',supp:'',mt:'sp',mv:''};const stSel=new Set();
+let stEL=false,stEmp=false,stVis=[],stBk=null,stBf={stamp:'',supp:'',mt:'sp',mv:''};const stSel=new Set();
 window.stEm=()=>{stEmp=!stEmp;stR()};
+/* ---- Edit list: fill empty cells straight in the stock table ---- */
+const EDC=['gw','less','pcs','stamp','size','design','huid','tunch','lab','rate','mrp'];
+const stEE=(t,c)=>EDC.includes(c);
+const stEI=(t,c)=>{const no=hx(t.tagNo);
+ if(c=='stamp'||c=='design'){let o;if(c=='stamp')o=Object.values(S.stamps||{}).filter(x=>stC(x).includes(t.cat)).map(x=>x.name);else{const it=S.items[k(t.item||'')];o=it&&it.designs?it.designs:Object.values(S.designs||{}).filter(d=>(d.cats||[]).includes(t.cat)).map(d=>d.name)}
+  const cv=String(t[c]??'').trim();if(cv&&!o.includes(cv))o=[...o,cv];
+  return`<select class="ei" data-t="${no}" data-c="${c}" onchange="stCe(this.dataset.t,'${c}',this.value)"><option value=""></option>${o.map(y=>`<option value="${hx(y)}" ${y==cv?'selected':''}>${hx(y)}</option>`).join('')}</select>`}
+ return`<input class="ei" data-t="${no}" data-c="${c}" ${['size','huid'].includes(c)?'':'inputmode="decimal"'} value="${hx(t[c]??'')}" onchange="stCe(this.dataset.t,'${c}',this.value)">`};
+
+/* keyboard: Up/Down/Enter move between rows in the same column; focus survives the re-render after a save */
+let stFo=null;
+const stAll=()=>[...document.querySelectorAll('#stt .ei')];
+document.addEventListener('focusin',e=>{const x=e.target;if(x.classList&&x.classList.contains('ei'))stFo={no:x.dataset.t,c:x.dataset.c,at:Date.now()}});
+document.addEventListener('keydown',e=>{const x=e.target;if(!x.classList||!x.classList.contains('ei')||x.tagName!='INPUT'||e.altKey||e.ctrlKey||e.metaKey)return;
+ const dn=e.key=='ArrowDown'||(e.key=='Enter'&&!e.shiftKey),up=e.key=='ArrowUp'||(e.key=='Enter'&&e.shiftKey);if(!dn&&!up)return;
+ const col=stAll().filter(i=>i.dataset.c==x.dataset.c&&i.tagName=='INPUT'),i=col.indexOf(x),nx=col[i+(dn?1:-1)];e.preventDefault();
+ if(nx){nx.focus();nx.select()}else x.blur()});
+const stRF=()=>{if(!stFo||Date.now()-stFo.at>2500||view!='stock'||!stEL)return;const a=document.activeElement;if(a&&a!=document.body&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;
+ const e=stAll().find(i=>i.dataset.t==stFo.no&&i.dataset.c==stFo.c);if(e){e.focus();if(e.select)e.select()}};
+{const r0=render;render=function(){r0.apply(this,arguments);stRF()}}
+
+window.stEL_=()=>{stEL=!stEL;stSel.clear();render()};
+window.stCe=async(no,c,v)=>{const t=S.tags[no];if(!t)return;v=String(v).trim();if(v===String(t[c]??'').trim())return;
+ const d={[c]:v};
+ if(c=='gw'||c=='less'){const g=n(c=='gw'?v:t.gw),l=n(c=='less'?v:t.less);d.nw=Math.max(0,g-l).toFixed(3)}
+ await stKeep(async()=>{await update(R('tags/'+no),d)});toast('✓ Saved '+no)};
+
 window.stSelT=(no,on)=>{on?stSel.add(no):stSel.delete(no);stR()};
 window.stSelA=on=>{stVis.forEach(no=>on?stSel.add(no):stSel.delete(no));stR()};
 window.stSelC=()=>{stSel.clear();stR()};
@@ -598,10 +626,10 @@ function stSelBar(){if(!stSel.size)return'';const cats=[...new Set([...stSel].ma
  return`<div class="selbar"><b>${stSel.size} selected</b><select onchange="stBfS('stamp',this.value)"><option value="">Stamp…</option>${op(sts,stBf.stamp)}</select><button onclick="stBulk('stamp')">Set stamp</button><select onchange="stBfS('supp',this.value)"><option value="">Supplier…</option>${op(sup,stBf.supp)}</select><button onclick="stBulk('supp')">Set supplier</button><div class="mgr"><select class="mgs" onchange="stBfS('mt',this.value)">${MG.s.f.map((x,i)=>`<option value="${x}" ${x==stBf.mt?'selected':''}>${MG.s.l[i]}</option>`).join('')}</select><input class="mgv" inputmode="decimal" placeholder="value" value="${hx(stBf.mv)}" oninput="stBfS('mv',this.value)"></div><button onclick="stBulk('mk')">Set sale making</button><button onclick="stBPrint()">🖨️ Reprint</button><button class="d" onclick="stSelC()">Clear</button></div>`}
 function stTable(l,si,cap){const all=(si?[['item','Item','t']]:[]).concat(COLS),s=stSD;l=srt(l,s);if(cap)l=l.slice(0,cap);stVis=l.map(t=>t.tagNo);
  const emp=si?[]:all.filter(c=>c[0]!='tagNo'&&c[0]!='pcs'&&!l.some(t=>String(cell(t,c[0])??'').trim()!==''));
- const cols=stEmp?all:all.filter(c=>!emp.includes(c)),allSel=l.length&&l.every(t=>stSel.has(t.tagNo));
+ const ed=stEL&&!si,cols=(stEmp||ed)?all:all.filter(c=>!emp.includes(c)),allSel=l.length&&l.every(t=>stSel.has(t.tagNo));
  const sm=f=>l.reduce((x,t)=>x+n(t[f]),0),pcs=l.reduce((x,t)=>x+(n(t.pcs)||1),0),tot=c=>c=='tagNo'||c=='item'?'Total · '+l.length:c=='gw'||c=='nw'?sm(c).toFixed(3):c=='less'?(sm('less')?sm('less').toFixed(3):''):c=='pcs'?String(pcs):c=='fine'?l.reduce((x,t)=>x+fineOf(t),0).toFixed(3):c=='cost'?(l.reduce((x,t)=>x+costOf(t),0)||'')&&l.reduce((x,t)=>x+costOf(t),0).toFixed(2):'';
  const cards=`<div class="stcs"><label><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"> All</label><select onchange="stSk(this.value)">${all.map(c=>`<option value="${c[0]}" ${s.k==c[0]?'selected':''}>Sort: ${c[1]}</option>`).join('')}</select><button onclick="stSo('D','${s.k}')">${s.d>0?'↑':'↓'}</button></div><div class="stc">${l.map(t=>{const pm=cell(t,'pm'),sm2=cell(t,'sm'),rt=n(t.rate)?'Rate '+hx(t.rate):'',cs=cell(t,'cost'),no=hx(t.tagNo),l2=[t.stamp,t.size&&'Size '+t.size,t.design,n(t.gw)!=n(t.nw)?'Gross '+n(t.gw).toFixed(3):'',fmtD(t.ts)].filter(Boolean).map(hx).join(' · ');return`<div class="stcd" data-t="${no}" onclick="stEd(this.dataset.t)"><label class="ckb" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${no}" onchange="stSelT(this.dataset.t,this.checked)"></label><div class="l1"><b>${no}</b>${si?`<span>${hx(t.item)}</span>`:''}<span class="nw">${n(t.nw).toFixed(3)} g</span></div>${l2?`<div class="l2">${l2}</div>`:''}${pm||sm2||rt||cs?`<div class="l3">${pm?`<span class="pur">${pm}</span>`:''}${rt?`<span class="pur">${rt}</span>`:''}${cs?`<span class="pur">Cost ${cs}</span>`:''}${sm2?`<span class="sal">${sm2}</span>`:''}</div>`:''}</div>`}).join('')}<div class="sttot">Total · ${l.length} tags · Gross ${sm('gw').toFixed(3)} · Net ${sm('nw').toFixed(3)} · Pcs ${pcs} · Fine ${l.reduce((x,t)=>x+fineOf(t),0).toFixed(3)}</div></div>`;
- return stSelBar()+`<div class="tw dtl"><table><tr class="g2"><th class="ck"><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"></th>${cols.map(([c,t,y,g])=>`<th class="s${y=='n'?' num':''}${g=='p'?' pur':g=='s'?' sal':''}${s.k==c?' act':''}" onclick="stSo('D','${c}')">${t}${arw(s,c)}</th>`).join('')}</tr>${l.map(t=>`<tr class="r" ${isSold(t)?'style="opacity:.55;background:#fff8e1"':''} data-t="${hx(t.tagNo)}" onclick="stEd(this.dataset.t)"><td class="ck" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${hx(t.tagNo)}" onchange="stSelT(this.dataset.t,this.checked)"></td>${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${cell(t,c)}</td>`).join('')}</tr>`).join('')}<tr class="tot"><td></td>${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${tot(c)}</td>`).join('')}</tr></table></div>${emp.length?`<button class="emb" onclick="stEm()">${stEmp?'▾ Hide':'▸ Show'} empty columns (${emp.length}): ${emp.map(c=>c[1]).join(', ')}</button>`:''}${cards}`}
+ return stSelBar()+`<div class="tw dtl"><table><tr class="g2"><th class="ck"><input type="checkbox" ${allSel?'checked':''} onchange="stSelA(this.checked)"></th>${cols.map(([c,t,y,g])=>`<th class="s${y=='n'?' num':''}${g=='p'?' pur':g=='s'?' sal':''}${s.k==c?' act':''}" onclick="stSo('D','${c}')">${t}${arw(s,c)}</th>`).join('')}</tr>${l.map(t=>`<tr class="r" ${isSold(t)?'style="opacity:.55;background:#fff8e1"':''} data-t="${hx(t.tagNo)}" onclick="stEd(this.dataset.t)"><td class="ck" onclick="event.stopPropagation()"><input type="checkbox" ${stSel.has(t.tagNo)?'checked':''} data-t="${hx(t.tagNo)}" onchange="stSelT(this.dataset.t,this.checked)"></td>${cols.map(([c,,y])=>ed&&stEE(t,c)?`<td class="ec" onclick="event.stopPropagation()">${stEI(t,c)}</td>`:`<td class="${y=='n'?'num':''}">${cell(t,c)}</td>`).join('')}</tr>`).join('')}<tr class="tot"><td></td>${cols.map(([c,,y])=>`<td class="${y=='n'?'num':''}">${tot(c)}</td>`).join('')}</tr></table></div>${emp.length&&!ed?`<button class="emb" onclick="stEm()">${stEmp?'▾ Hide':'▸ Show'} empty columns (${emp.length}): ${emp.map(c=>c[1]).join(', ')}</button>`:''}${cards}`}
 const chips=(c,g,nn,lab)=>`<div class="chips">${lab?`<span class="chip cat">${hx(lab)}</span>`:''}<span class="chip"><b>${c}</b> tags</span><span class="chip">Gross <b>${g.toFixed(3)}</b></span><span class="chip">Net <b>${nn.toFixed(3)}</b></span></div>`;
 const catChips=rows=>{const g={};rows.forEach(r=>{const x=g[r.cat]=g[r.cat]||{c:0,g:0,n:0};x.c+=r.c;x.g+=r.g;x.n+=r.n});return[...CATS,...Object.keys(g).filter(c=>!CATS.includes(c))].filter(c=>g[c]).map(c=>chips(g[c].c,g[c].g,g[c].n,c)).join('')};
 function stT(){const q=stQ.trim().toLowerCase(),L=stockLive().filter(tagOK),sum=f=>l=>l.reduce((s,t)=>s+n(t[f]),0);
@@ -619,14 +647,14 @@ function stFB(){const base=stockLive().filter(t=>stI!=null?t.item==stI:(!filt||t
 function stock(a){const bx=`<div class="grow"><label>Search</label><input placeholder="${stI!=null?'Tag no, stamp, size, design, HUID':'Item, tag no, stamp, size, design, HUID'}" value="${hx(stQ)}" oninput="stS(this.value)"></div>`;
  const fb=`<button class="fbtog${stFa()||stQ?' on':''}" id="stfb" onclick="stTog()"><span>🔍 Search &amp; filter</span><span id="stfa">${stOpen?'▴':'▾'}</span></button><div class="fbar${stFa()?' on':''}${stOpen?'':' cl'}" id="stf">${bx}${stFB()}</div>`;
  const sb=SOLD_SHOW?`<p class="sub" style="background:#fff3cd;padding:6px 10px;border-radius:8px">Showing SOLD tags too (they are only hidden, never deleted). Tap the title once to hide them.</p>`:'';
- a.innerHTML=stI!=null?`<div class="bar"><button onclick="stBack()">◀ All items</button></div><h3>Stock — ${hx(stI)}</h3>${sb}${fb}<div id="stt">${stT()}</div>`:`<h3>Stock</h3>${sb}${fb}<div id="stt">${stT()}</div>`}
+ a.innerHTML=stI!=null?`<div class="bar"><button onclick="stBack()">◀ All items</button><span style="flex:1"></span><button class="${stEL?'p':''}" onclick="stEL_()">${stEL?'✓ Done editing':'✏️ Edit list'}</button></div>${stEL?'<p class="sub">Edit mode: type in any cell to add or change data — it saves when you press Enter or leave the cell.</p>':''}<h3>Stock — ${hx(stI)}</h3>${sb}${fb}<div id="stt">${stT()}</div>`:`<h3>Stock</h3>${sb}${fb}<div id="stt">${stT()}</div>`}
 let stOpen=false; /* phones: search/filter box starts collapsed */
 window.stTog=()=>{stOpen=!stOpen;const f=$('#stf');if(f)f.classList.toggle('cl',!stOpen);const x=$('#stfa');if(x)x.textContent=stOpen?'▴':'▾'};
 window.stR=()=>{const t=$('#stt');if(t)t.innerHTML=stT();const f=$('#stf');if(f)f.classList.toggle('on',stFa());const g=$('#stfb');if(g)g.classList.toggle('on',!!(stFa()||stQ))};
 window.stS=v=>{stQ=v;stR()};
 window.stSo=(w,c)=>{const s=w=='L'?stSL:stSD;if(s.k==c)s.d=-s.d;else{s.k=c;s.d=1}stR()};
-window.stBack=()=>{const b=stBk;stSel.clear();stI=null;stQ=b?b.Q:'';stF=b?{...b.F}:stF0();stOpen=b?b.open:false;render();if(b)scrollTo(0,b.y)};
-window.stO=i=>{stBk={F:{...stF},Q:stQ,open:stOpen,y:scrollY};stSel.clear();stI=i;stQ='';stF=stF0();stOpen=false;render();scrollTo(0,0)};
+window.stBack=()=>{stEL=false;const b=stBk;stSel.clear();stI=null;stQ=b?b.Q:'';stF=b?{...b.F}:stF0();stOpen=b?b.open:false;render();if(b)scrollTo(0,b.y)};
+window.stO=i=>{stEL=false;stBk={F:{...stF},Q:stQ,open:stOpen,y:scrollY};stSel.clear();stI=i;stQ='';stF=stF0();stOpen=false;render();scrollTo(0,0)};
 let ME=null;
 window.stEd=no=>{const t=S.tags[no];if(!t)return;ME={no,o:t,f:{...t}};stMo()};
 const ruleFor=(it,stamp,w)=>{if(!it||!it.rules||!it.rules.length||!w)return null;const sn=x=>String(x||'').trim().toLowerCase(),st=sn(stamp),inr=r=>w>=n(r.min)&&w<n(r.max);return(st&&it.rules.find(r=>inr(r)&&sn(r.stamp)==st))||it.rules.find(r=>inr(r)&&!sn(r.stamp))||null};
