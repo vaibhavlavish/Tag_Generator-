@@ -197,7 +197,7 @@ header b{cursor:pointer;-webkit-user-select:none;user-select:none}
 .attn{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);margin:12px 0;overflow:hidden}.at-t{padding:10px 14px;background:#f3ead3;font-size:13.5px}.at-r{display:flex;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid #efe6d0;cursor:pointer}.at-r span:nth-child(2){flex:1}.at-r:hover{background:#fffaf0}
 .efold{display:block!important;width:100%;box-sizing:border-box;text-align:left;margin:12px 0 0;padding:12px 14px;border:1px dashed var(--gold2);border-radius:10px;background:#fffaf0;color:var(--gold);font-weight:600;font-size:14px;line-height:1.4;height:auto}
 .tw td.ec{padding:3px 4px;background:#fffaf0}.tw td.ec .mgr{min-width:150px}.tw input.ei,.tw select.ei{scroll-margin:90px 0 30px}.tw input.ei,.tw select.ei{min-width:68px;padding:5px 6px;font-size:13px;border-style:dashed}
-</style></head><body>
+.cuw .cut{width:100%;border-collapse:collapse}.cuw .cut td{padding:3px 4px}.cuw .cut input[type=text]{width:100%;font-size:16px;padding:7px 8px}.cuc{display:inline-block;padding:4px 10px;margin:0 6px 6px 0;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;font-size:12.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cuc:hover{border-color:var(--gold);background:#fbf5e4}#cust{font-size:12.5px;margin:6px 0;min-height:18px}#cust.w{color:var(--red)}</style></head><body>
 <div id="login"><div><h3>Login</h3><input id="em" placeholder="Email"><br><br><input id="pw" type="password" placeholder="Password"><br><br><button class="p" onclick="login()">Login</button></div></div>
 <header><button id="bk" onclick="goBack()" aria-label="Back">◀ Back</button><b role="button" tabindex="0" title="Home" onclick="hdTap()" onkeydown="if(event.key=='Enter')hdTap()">Suhag Tag Generator</b><span id="hs" class="hs" onclick="hsCheck(1)" title="Print helper status — tap to re-check"><i></i><span>Printer</span></span><span id="abw" class="abw" style="display:none" onclick="abOpen()" title="Auto backup needs attention — tap to open">⚠ Backup</span><button onclick="signOutTG()" title="Sign out">Sign out</button></header>
 <main id="app"></main><div id="lbl"></div>
@@ -389,8 +389,8 @@ function opts(f){const c=F.cat;if(f=='cat')return CATS;
  if(f=='stamp')return Object.values(S.stamps).filter(s=>stC(s).includes(c)).map(s=>s.name);
  if(f=='supplier')return suppNames();
  if(f=='design'){const it=S.items[k(F.item||'')];return it&&it.designs?it.designs:Object.values(S.designs).filter(d=>(d.cats||[]).includes(c)).map(d=>d.name)}}
-function render(){const a=$('#app');if(view=='home'&&document.activeElement&&document.activeElement.id=='hsq')return;if(view=='home')a.innerHTML=`${homeSearch()}${homeStats()}${homeAttn()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
- else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else entry(a)}
+function render(){const a=$('#app');if(view=='home'&&document.activeElement&&document.activeElement.id=='hsq')return;if(view=='custom'&&$('#cuw')&&$('#cuw').contains(document.activeElement))return;if(view=='home')a.innerHTML=`${homeSearch()}${homeStats()}${homeAttn()}<div class="tiles">${[['auto','🏷️','Auto Print','Fill the details, tag prints instantly'],['bulk','🗂️','Bulk Print','Add many tags, print them together'],['reprint','🔁','Tag Print','Reprint tags by barcode number'],['custom','✍️','Custom Print','Type any text, see a live preview, print it on a tag'],['stock','📦','Stock','Browse, sort and filter all tags'],['settings','⚙️','Setting','Stamps, designs, items, suppliers, layout, printer, backup']].map(x=>`<div class="tile" tabindex="0" role="button" onclick="go('${x[0]}')" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[1]}</span><span><b>${x[2]}</b><small>${x[3]}</small></span></div>`).join('')}</div>`;
+ else if(view=='settings')settings(a);else if(view=='stock')stock(a);else if(view=='reprint')reprint(a);else if(view=='custom')customView(a);else entry(a)}
 function entry(a){const vl=vous();if(vou==null)vou=maxVou()+1; /* every time Auto/Bulk is opened a NEW voucher starts (number is only used once a tag is saved) */
  const vt=Object.values(S.tags).filter(t=>+t.vou==vou&&t.status!='archived').sort((x,y)=>y.ts-x.ts);
  const fh=([f,l,t])=>{const emp=!SHE&&!!editing,ae=document.activeElement,fo=ae&&ae.dataset&&ae.dataset.f==f; /* editing a tag: empty cells get class "ef" (hidden on mobile until "Empty cells" is pressed) */
@@ -447,7 +447,7 @@ const liveTag=t=>{const it=S.items&&t&&t.item?S.items[k(t.item)]:null;return it?
 function printBrowser(l){l=l.map(liveTag);const c=S.cfg.nudge||{x:0,y:0};const o=(x,y)=>`left:${x+n(c.x)}mm;top:${y+n(c.y)}mm`;
  /* layout copied from MMI 82by12 PDF: left text x=3.17, right column x=30.69, nothing past ~54mm */
  const B=n(c.font)||7,fit=(t,W,max)=>Math.min(max,(W/(Math.max(String(t).length,1)*0.68))/0.3528).toFixed(2)+'pt';
- $('#lbl').innerHTML=l.map(t=>{const gold=t.cat==CATS[0],f3=v=>n(v).toFixed(3);
+ $('#lbl').innerHTML=l.map(t=>{if(t.custom)return`<div class="L">${customItems(t.custom,n(S.cfg.prn&&S.cfg.prn.px)||19).map(it=>`<div style="${o(it.x/8,it.y/8)};font:${it.b===0?'normal':'bold'} ${it.px/8}mm ${it.fam},serif;white-space:nowrap">${hx(it.parts[0].t)}</div>`).join('')}</div>`;const gold=t.cat==CATS[0],f3=v=>n(v).toFixed(3);
  const row=gold?`${t.tagNo}&nbsp;&nbsp;&nbsp;${t.stamp||''}`:`${t.tagNo}&nbsp;&nbsp;&nbsp;${t.size?'SIZE='+t.size:''}`;
  const rows=n(t.gw)?[`G.W.= ${f3(t.gw)}`,`N.W.= ${f3(t.nw)}`]:[];if(gold&&t.size)rows.push(`SIZE= ${t.size}`);if(t.huid)rows.push(`HUID= ${t.huid}`);
  const sp=rows.length>3?2.65:2.95,fz=(rows.length>3?B-0.5:B)+'pt';
@@ -503,10 +503,46 @@ window.verifyLayout=()=>{const D=[0,1,2].map(defLayout),sig=JSON.stringify(D)+JS
 function buildTSPL(l){const c=S.cfg.nudge||{},P=S.cfg.prn||{},enc=new TextEncoder(),parts=[];const ox=Math.round(n(c.x)*8),oy=Math.round(n(c.y)*8),B=n(P.px)||19;
  const add=t=>parts.push(enc.encode(t));
  add(`SIZE 82 mm,12 mm\r\nGAP ${P.gap??3} mm,0 mm\r\nDIRECTION ${P.dir??1}\r\nDENSITY ${P.den??8}\r\nSPEED ${P.spd??3}\r\n${(P.sh??14)?'SHIFT '+(P.sh??14)+'\r\n':''}`);
- l.forEach(t=>{const lay=getLay(catI(t)),bar=lay.bar||{},b=textBmp(layoutItems(t,B,P,lay));
+ l.forEach(t=>{const cu=t.custom,lay=cu?null:getLay(catI(t)),bar=cu?{side:'N'}:(lay.bar||{}),b=textBmp(cu?customItems(cu,B):layoutItems(t,B,P,lay));
  add('CLS\r\n');if(bar.side!='N')add(`BARCODE ${bar.x+ox},${bar.y+oy},"39",${bar.h},0,0,${bar.n||1},${bar.w||3},"${t.tagNo}"\r\n`);
  add(`BITMAP ${ox},${oy},${b.wb},${b.H},1,`);parts.push(b.bytes);add('\r\nPRINT 1,1\r\n')});
  return parts}
+/* ---- Custom Print: free text on the same 82 x 12 mm tag, live preview, editable look. Saved in this browser only. ---- */
+const CU_DEF=()=>({lines:[{t:''},{t:''},{t:''},{t:''}],fam:'',px:'',af:1,b:1,al:'L',x:'3',y:'',gap:'',w:'',cp:1});
+let CU=(()=>{try{const o=JSON.parse(lsg('tg_custom')||'null');if(o&&o.lines&&o.lines.length==4)return Object.assign(CU_DEF(),o)}catch(e){}return CU_DEF()})(),CUH=(()=>{try{return JSON.parse(lsg('tg_custom_h')||'[]')||[]}catch(e){return[]}})();
+const cuSave=()=>lss('tg_custom',JSON.stringify(CU));
+/* items for the printer bitmap / preview. Text is shrunk to fit the width, aligned L/C/R inside it, block centred up-down unless Y is set */
+function customItems(c,B){const P=S.cfg.prn||{},fam=c.fam||P.font||'Cambria',gp=+c.px>0?+c.px:B,g=customItems.g||(customItems.g=document.createElement('canvas').getContext('2d')),bold=c.b===0?0:1;
+ const X=Math.max(0,Math.round(n(c.x)*8)),W=Math.round(n(c.w)*8)||Math.max(40,440-X),gap=Math.round(n(c.gap)*8);
+ const L=(c.lines||[]).map(l=>({t:String(l.t||'').trim(),px:+l.px>0?+l.px:gp}));while(L.length&&!L[L.length-1].t)L.pop();const out=[];if(!L.length)return out;
+ const meas=q=>{g.font=`${bold?'bold':'normal'} ${q.px}px ${fam},serif`;g.textBaseline='top';const m=g.measureText(q.t);q.w=m.width;q.it=-m.actualBoundingBoxAscent;q.ib=m.actualBoundingBoxDescent},pitch=q=>gap||(q.px+3);
+ const ink=()=>{let y=0,t=1e9,b=-1e9;L.forEach(q=>{if(q.t){t=Math.min(t,y+q.it);b=Math.max(b,y+q.ib)}y+=pitch(q)});return[t,b]};
+ /* Auto size: one common size, the biggest that fits the width and the 12 mm height. Otherwise each line keeps its size, shrinking only if wider than the width */
+ if(c.af){for(let px=110;px>=9;px--){L.forEach(q=>{q.px=px;meas(q)});const[t,b]=ink();if(L.every(q=>!q.t||q.w<=W)&&b-t<=92)break}}
+ else L.forEach(q=>{meas(q);while(q.t&&q.w>W&&q.px>9){q.px--;meas(q)}});
+ const[it0,ib0]=ink(),y0=String(c.y??'')!==''?Math.round(n(c.y)*8):Math.round((96-(ib0-it0))/2-it0);
+ let y=y0;L.forEach(q=>{if(q.t){const x=X+(c.al=='C'?(W-q.w)/2:c.al=='R'?W-q.w:0),it={x:Math.round(x),y:Math.round(y),px:q.px,maxw:0,fam,parts:[{t:q.t,dx:0}]};if(!bold)it.b=0;out.push(it)}y+=pitch(q)});
+ out.bot=y0+ib0;out.top=y0+it0;return out}
+function cuPv(){const cv=$('#cup');if(!cv)return;const P=S.cfg.prn||{},B=n(P.px)||19,g=cv.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,656,96);g.fillStyle='#e4e4e4';g.fillRect(440,0,216,96);g.fillStyle='#c00';g.fillRect(440,0,1,96);
+ const it=customItems(CU,B);paintItems(g,it,P.font||'Cambria');
+ const gp=+CU.px>0?+CU.px:B,sh=!CU.af&&(CU.lines||[]).some((l,i)=>{const o=it.find(q=>q.parts[0].t==String(l.t||'').trim());return o&&o.px<(+l.px>0?+l.px:gp)}),e=$('#cust');
+ if(e){const w=[];if(it.bot>97||it.top<-1)w.push('Text goes past the top/bottom of the tag – reduce size / gap or change Y.');if(sh)w.push('Some text was too wide and is shown smaller to fit.');if(Math.round(n(CU.x)*8)+(Math.round(n(CU.w)*8)||0)>440&&n(CU.w)>0)w.push('X + Width goes past the 55 mm print area.');e.className=w.length?'w':'mut';e.textContent=w.length?'⚠ '+w.join(' '):(it.length?'Fits on the tag.':'Type text above to see the preview.')}}
+function customView(a){const P=S.cfg.prn||{},B=n(P.px)||19,gf=P.font||'Cambria',c=CU,lp=(+c.px>0?c.px:B);
+ const fl=(k,l,ph)=>`<div><label>${l}</label><input value="${lyEsc(c[k]??'')}" placeholder="${ph||''}" oninput="cuSet('${k}',this.value)" inputmode="decimal"></div>`;
+ a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Back</button></div><h3>Custom Print</h3><p class="sub">Type any text and it prints on the same 82 × 12 mm tag. Preview below is exactly what the printer gets (grey = fold area, red line = 55 mm).</p>
+ <div class="card cuw" id="cuw"><canvas id="cup" width="656" height="96" style="width:100%;max-width:1000px;border:1px solid #999;background:#fff"></canvas><div id="cust" class="mut"></div>
+ <table class="cut"><tr><th></th><th style="text-align:left;font-size:11px">Text (up to 4 lines)</th><th style="font-size:11px;width:78px">Size (dots)</th></tr>${c.lines.map((l,i)=>`<tr><td>${i+1}</td><td><input type="text" id="cul${i}" value="${lyEsc(l.t||'')}" placeholder="${i?'':'Type here…'}" oninput="cuLine(${i},'t',this.value)" onkeydown="if(event.key=='Enter'){event.preventDefault();const n=$('#cul${i+1}');if(n)n.focus();else this.blur()}" autocomplete="off"></td><td><input type="text" style="width:70px;text-align:center" value="${lyEsc(l.px||'')}" placeholder="${lp}" oninput="cuLine(${i},'px',this.value)" inputmode="numeric"></td></tr>`).join('')}</table>
+ <h4>Edit look</h4><div class="grid"><div><label>Auto size (fill tag)</label><select id="cuaf" onchange="cuSet('af',+this.value)"><option value="1" ${c.af===0?'':'selected'}>Yes – biggest that fits</option><option value="0" ${c.af===0?'selected':''}>No – use sizes below</option></select></div><div><label>Font</label><select onchange="cuSet('fam',this.value)">${lyFo(c.fam,'Global ('+gf+')')}</select></div>${fl('px','Size (dots, all lines)','global '+B)}<div><label>Bold</label><select onchange="cuSet('b',+this.value)"><option value="1" ${c.b===0?'':'selected'}>Yes</option><option value="0" ${c.b===0?'selected':''}>No</option></select></div><div><label>Align</label><select onchange="cuSet('al',this.value)"><option value="L" ${c.al=='L'?'selected':''}>Left</option><option value="C" ${c.al=='C'?'selected':''}>Center</option><option value="R" ${c.al=='R'?'selected':''}>Right</option></select></div>${fl('x','X from left (mm)')}${fl('w','Width (mm, blank = to 55)')}${fl('y','Y from top (mm, blank = centred)')}${fl('gap','Line gap (mm, blank = auto)')}${fl('cp','Copies')}</div>
+ <div class="bar"><button class="p" onclick="cuPrint()">🖨 Print tag</button><button onclick="cuClear()">Clear text</button><button onclick="cuReset()">Reset look</button></div>
+ ${CUH.length?`<h4>Recent</h4><div>${CUH.map((h,i)=>`<span class="cuc" onclick="cuLoad(${i})" title="Load this text and look">${hx(h.lines.map(l=>l.t).filter(Boolean).join('  /  '))}</span>`).join('')}</div>`:''}</div>`;cuPv()}
+window.cuSet=(k,v)=>{CU[k]=v;if(k=='px'&&String(v).trim()!==''){CU.af=0;const e=$('#cuaf');if(e)e.value='0'}cuSave();cuPv()};
+window.cuLine=(i,k,v)=>{CU.lines[i][k]=v;if(k=='px'&&String(v).trim()!==''){CU.af=0;const e=$('#cuaf');if(e)e.value='0'}cuSave();cuPv()};
+window.cuClear=()=>{CU.lines=CU_DEF().lines;cuSave();customView($('#app'));const e=$('#cul0');if(e)e.focus()};
+window.cuReset=()=>{CU=Object.assign(CU_DEF(),{lines:CU.lines});cuSave();customView($('#app'))};
+window.cuLoad=i=>{const h=CUH[i];if(!h)return;CU=Object.assign(CU_DEF(),JSON.parse(JSON.stringify(h)));cuSave();customView($('#app'))};
+window.cuPrint=async()=>{if(!CU.lines.some(l=>String(l.t||'').trim()))return toast('Type some text first',1);const cp=Math.max(1,Math.min(99,parseInt(CU.cp)||1)),c=JSON.parse(JSON.stringify(CU));delete c.cp;
+ const t={tagNo:'CUSTOM',cat:CATS[0],custom:c};await printTags(Array.from({length:cp},()=>JSON.parse(JSON.stringify(t))));
+ const sg=JSON.stringify(c.lines.map(l=>l.t));CUH=[JSON.parse(JSON.stringify(c)),...CUH.filter(h=>JSON.stringify(h.lines.map(l=>l.t))!=sg)].slice(0,8);lss('tg_custom_h',JSON.stringify(CUH))};
 /* ---- Layout editor (Setting -> Layout) ---- */
 let LYC=0,LYW=null;
 const LY_FIELDS=[['','-'],['tagNo','Tag No'],['name','Print name'],['gw','Gross Wt'],['less','Less'],['nw','Net Wt'],['pcs','Pcs'],['stamp','Stamp'],['size','Size'],['design','Design'],['tunch','Tunch'],['huid','HUID'],['mrp','MRP'],['prate','PRATE'],['srate','SRATE'],['supplier','Supplier'],['pw','P/wstg'],['pp','P/%'],['pwt','P/wt'],['prs','P/Rs'],['sw','S/wstg'],['sp','S/%'],['swt','S/wt'],['srs','S/Rs'],['letter','Item letter'],['item','Item']];
