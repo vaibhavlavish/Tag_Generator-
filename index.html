@@ -431,6 +431,7 @@ async function claimVou(){if(vClaimed===vou||vous().includes(vou)){vClaimed=vou;
 window.gen=async()=>{const it=S.items[k(F.item||'')];if(!it||!F.cat||(!n(F.gw)&&!(n(F.mrp)>0)))return alert('Category, item and gross weight (or MRP) are required');
  if(!n(F.gw)){F.gw='';F.less='';F.nw=''}
  if(F.stamp&&!opts('stamp').includes(F.stamp))F.stamp='';
+ if(F.stamp&&!(n(F.gw)>0&&n(F.gw)-n(F.less)>0))return alert('Stamped item cannot have 0 weight — enter gross weight (net must be above 0). MRP-only is not allowed with a stamp.');
  if(n(F.mrp)>0)['sw','sp','swt','srs','srate'].forEach(x=>F[x]='');
  if(!n(F.pcs))F.pcs='1';
  let t;if(editing){const o=S.tags[editing];if(!o||o.status=='archived'){alert('Tag '+editing+' was deleted on another device, so it was not saved.');editing=null;F={cat:CATS[0]};render();return}
@@ -805,7 +806,7 @@ if(window.FB)startAuth();else{addEventListener("fb-ready",startAuth,{once:true})
 /* ===== quick entry: weight -> 3rd decimal / Enter completes the tag ===== */
 window.qIn=(f,e)=>sv(f,e.value,1);
 window.qKey=(ev,f)=>{if(ev.key!='Enter')return;ev.preventDefault();
- if(f=='gw'){if(n(F.gw)>0)qGo();else if(n(F.mrp)>0){if(confirm('No gross weight. Make an MRP-only tag at MRP '+F.mrp+'?'))qGo()}else alert('Enter gross weight (or MRP for an MRP-only tag)')}else $('#qgw').focus()};
+ if(f=='gw'){if(n(F.gw)>0)qGo();else if(n(F.mrp)>0&&!F.stamp){if(confirm('No gross weight. Make an MRP-only tag at MRP '+F.mrp+'?'))qGo()}else alert(F.stamp?'Stamped item cannot have 0 weight — enter gross weight':'Enter gross weight (or MRP for an MRP-only tag)')}else $('#qgw').focus()};
 window.qGo=async()=>{if(QB)return;QB=1;const hh=String(F.huid||'').trim();try{FG=hh?'qhuid':'qgw';await gen()}finally{QB=0;FG=false}};
 document.addEventListener('keydown',ev=>{if(ev.key!='Enter'||(view!='auto'&&view!='bulk'))return;const t=ev.target;
  if(!t.closest||t.id=='qgw'||t.id=='qhuid'||!t.closest('.grid,.qk')||!(t.tagName=='INPUT'||t.tagName=='SELECT'))return;ev.preventDefault();
