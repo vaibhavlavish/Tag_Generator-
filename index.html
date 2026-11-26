@@ -754,16 +754,17 @@ window.rpPrint=async()=>{const q=RP.rows.map(x=>x.trim().toUpperCase()).filter(B
  if(ok.length)await printTags(ok);
  RP.msg=(ok.length?`<p>Sent to printer: <b>${ok.length}</b> tag(s)</p>`:'')+(miss.length?`<p style="color:var(--red)">Not found: ${hx(miss.join(', '))}</p>`:'')+(del.length?`<p style="color:var(--red)">Deleted (not printed): ${hx(del.join(', '))}</p>`:'');
  const m=$('#rpm');if(m)m.innerHTML=RP.msg};
-function settings(a){if(sub=='items'&&IV=='sheet'&&!IE){const ae=document.activeElement;if(a.querySelector('#qsrows')&&ae&&a.contains(ae)&&/^(INPUT|SELECT)$/.test(ae.tagName))return}
+function settings(a){if(sub=='dateimp'&&a.querySelector('#dtroot'))return;if(sub=='items'&&IV=='sheet'&&!IE){const ae=document.activeElement;if(a.querySelector('#qsrows')&&ae&&a.contains(ae)&&/^(INPUT|SELECT)$/.test(ae.tagName))return}
 const tb=['stamps','designs','items','layout','print'].map(x=>`<button class="${x==sub?'on':''}" onclick="sub='${x}';render()">${x[0].toUpperCase()+x.slice(1)}</button>`).join('');let h='';
  if(sub=='stamps')h=`<div class="bar"><input id="sn" placeholder="Stamp name"></div><div class="bar">${CATS.map(c=>`<label><input type="checkbox" class="sck" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addS()">Add</button></div><p class="mut" style="margin:0">Tick every category the stamp belongs to. Adding an existing stamp again adds the ticked categories to it.</p><table>${Object.values(S.stamps).map(s=>`<tr><td>${s.name}</td><td>${stC(s).map(cbg).join(' ')}</td><td><button class="d" onclick="rm('stamps','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.stamps).length?'':'<p class="empty">No stamps yet — add one above.</p>'}`;
  if(sub=='designs')h=`<div class="bar"><input id="dn" placeholder="Design name"></div><div class="bar">${CATS.map((c,i)=>`<label><input type="checkbox" class="dc" value="${c}" style="width:auto"> ${c}</label>`).join('')}<button class="p" onclick="addD()">Add</button></div><table>${Object.values(S.designs).map(s=>`<tr><td>${s.name}</td><td>${(s.cats||[]).join(', ')}</td><td><button class="d" onclick="rm('designs','${k(s.name)}')">✕</button></td></tr>`).join('')}</table>${Object.keys(S.designs).length?'':'<p class="empty">No designs yet — add one above.</p>'}`;
  if(sub=='items')h=itemsUI();
  if(sub=='suppliers')h=suppliersUI();
  if(sub=='backup')h=backupUI();
+ if(sub=='dateimp')h=dateImpUI();
  if(sub=='layout')h=layoutUI();
  if(sub=='print'){const c=S.cfg.nudge||{x:0,y:0};h=devCard()+`<div class="grid"><div><label>Nudge X (mm)</label><input id="nx" value="${c.x}"></div><div><label>Nudge Y (mm)</label><input id="ny" value="${c.y}"></div><div><label>Helper URL</label><input id="pu" value="${(S.cfg.prn||{}).url||'http://localhost:9101'}"></div><div><label>Gap (mm)</label><input id="pg" value="${(S.cfg.prn||{}).gap??3}"></div><div><label>Direction (0/1)</label><input id="pd" value="${(S.cfg.prn||{}).dir??1}"></div><div><label>Font</label><input id="pf" value="${(S.cfg.prn||{}).font||'Cambria'}"></div><div><label>Text size (dots)</label><input id="pz" value="${(S.cfg.prn||{}).px||19}"></div><div><label>Invert bitmap (0/1)</label><input id="pi" value="${(S.cfg.prn||{}).inv||0}"></div><div><label>Shift up/down (dots)</label><input id="psh" value="${(S.cfg.prn||{}).sh??14}"></div><div><label>Darkness (0-15)</label><input id="pk" value="${(S.cfg.prn||{}).den??8}"></div><div><label>Speed (1-5)</label><input id="ps" value="${(S.cfg.prn||{}).spd??3}"></div></div><div class="bar"><button class="p" onclick="saveN()">Save</button><button onclick="pingHelper()">Check helper</button><button onclick="rulerPrint()">Ruler test</button><button onclick="verifyLayout()">Verify layout</button><button onclick="printTags([{cat:CATS[0],tagNo:'GRG1',gw:1,nw:1,size:'10',stamp:'18K',name:'TEST'}])">Test print</button></div><div class="card"><b>Backup</b><div class="bar"><button onclick="exportDB()">Export backup</button><input type="file" id="jf" accept=".json" style="width:auto"><button onclick="importDB()">Restore</button></div></div><div class="card"><b>Import product_data.xlsx</b><br><input type="file" id="xf" accept=".xlsx"><div class="bar"><button class="p" onclick="imp()">Import</button><span id="ist"></span></div></div><div class="card" style="border-color:#e4b7b3"><b style="color:var(--red)">Delete all stock</b><p class="mut" style="margin:4px 0 8px">Removes every tag from stock so you can enter or import them again. A full backup file downloads first. Items, stamps, designs, layout, settings and next-number counters are kept.</p><button class="d" onclick="delAllStock()">Delete all stock…</button></div>`}
- const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making rules — list &amp; quick sheet'],suppliers:['🏭','Suppliers','Supplier list used on tags'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import'],backup:['💾','Auto Backup','Save a copy to a folder on a schedule']};
+ const SI={stamps:['🔖','Stamps','Hallmark stamps per category'],designs:['💎','Designs','Design names per category'],items:['📿','Items','Prefix, print name, letter, making rules — list &amp; quick sheet'],suppliers:['🏭','Suppliers','Supplier list used on tags'],layout:['📐','Layout','Edit the label layout'],print:['🖨️','Print','Printer, helper, backup and import'],backup:['💾','Auto Backup','Save a copy to a folder on a schedule'],dateimp:['📅','Date Import (temporary)','Fill BLANK tag dates from Excel: Tag No, Item Name, Date']};
  if(!sub||!SI[sub]){a.innerHTML=`<h3>Setting</h3><div class="tiles">${Object.entries(SI).map(([k,x])=>`<div class="tile" tabindex="0" role="button" onclick="sub='${k}';render();scrollTo(0,0)" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">${x[0]}</span><span><b>${x[1]}</b><small>${x[2]}</small></span></div>`).join('')}<div class="tile" tabindex="0" role="button" onclick="refreshApp()" onkeydown="if(event.key=='Enter')this.click()"><span class="ti">🔄</span><span><b>Refresh</b><small>Reload the app to get the latest version and data</small></span></div></div>`;return}
  a.innerHTML=`<div class="bar"><button onclick="goBack()">◀ Setting</button></div><h3>${SI[sub][1]}</h3><div class="card">${h}</div>`;if(sub=='layout')lyPv();if(sub=='backup')abStatus();if(sub=='items'&&IV=='sheet'&&!IE)qsBuild()}
 window.CATS=CATS;window.printTags=printTags;window.rm=async(p,key)=>{if(confirm('Remove?'))await set(R(p+'/'+key),null)};
@@ -800,6 +801,69 @@ window.imp=async()=>{const f=$('#xf').files[0];if(!f)return;const rows=XLSX.util
  const fl=[];Object.keys(tags).filter(x=>S.tags[x]).forEach(x=>['tunch','pw','lab','pcs','supplier'].forEach(f=>{if(f=='pcs'?tags[x]._pq!=='':tags[x][f]!=='')if((S.tags[x][f]==null||S.tags[x][f]===''))fl.push(['tags/'+x+'/'+f,tags[x][f]])}));
  for(let i=0;i<fl.length;i+=1000)await update(R(''),Object.fromEntries(fl.slice(i,i+1000)));const flt=new Set(fl.map(a=>a[0].split('/')[1])).size;
  const msg='Imported '+ks.length+' new tags'+(sk?' ('+sk+' already existed; Tunch, Wstg, Labour, Pcs and Supplier filled on '+flt+' of them where they were blank)':'')+'. Everything else on existing tags, items, stamps, designs and counters was kept.'+(bad.length?' '+bad.length+' tags have a tunch-looking number (72/76) in the Wstg column and no Tunch, so their Tunch and Wstg were left blank: '+bad.join(', ')+'.':'');const ee=$('#ist');if(ee)ee.textContent=msg;alert(msg)};
+/* ===== TEMPORARY: Tag Date Import (Settings -> Date Import). Excel columns: TAG NO | ITEM NAME | DATE.
+   Fills the date ONLY on tags whose date is blank. A tag that already has a date is NEVER changed. Remove this block when the dates are done. ===== */
+let DTP=null;
+const dtMs=(y,m,d)=>{if(y<100)y+=2000;if(m<1||m>12||d<1||d>31||y<1990||y>2100)return -1;const t=new Date(y,m-1,d,12,0,0,0);return(t.getMonth()==m-1&&t.getDate()==d)?t.getTime():-1};
+const dtSer=v=>{const d=new Date(Date.UTC(1899,11,30)+Math.floor(v)*864e5);return dtMs(d.getUTCFullYear(),d.getUTCMonth()+1,d.getUTCDate())};
+/* returns null = blank cell, -1 = could not read, otherwise the date as ms (local noon) */
+function dtParse(v){
+ if(v==null)return null;
+ if(v instanceof Date)return isNaN(v)?-1:dtMs(v.getFullYear(),v.getMonth()+1,v.getDate());
+ if(typeof v=='number')return(v>20000&&v<80000)?dtSer(v):-1;
+ const s=String(v).trim();if(!s)return null;
+ if(/^\d{5}(\.\d+)?$/.test(s)){const x=parseFloat(s);return(x>20000&&x<80000)?dtSer(x):-1}
+ let m;
+ if(m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?!\d)/))return dtMs(+m[1],+m[2],+m[3]);
+ if(m=s.match(/^(\d{1,2})[-\/.\s](\d{1,2})[-\/.\s](\d{4}|\d{2})(?!\d)/)){const a=+m[1],b=+m[2];let r=dtMs(+m[3],b,a);if(r<0&&a<=12)r=dtMs(+m[3],a,b);return r} /* day-month-year first; month-day only if day-month is impossible */
+ const MN={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+ if(m=s.match(/^(\d{1,2})[-\/.\s]*([A-Za-z]{3,9})[-\/.,\s]*(\d{4}|\d{2})(?!\d)/)){const mo=MN[m[2].slice(0,3).toLowerCase()];return mo?dtMs(+m[3],mo,+m[1]):-1}
+ if(m=s.match(/^([A-Za-z]{3,9})[-\/.\s]*(\d{1,2}),?[-\/.\s]*(\d{4}|\d{2})(?!\d)/)){const mo=MN[m[1].slice(0,3).toLowerCase()];return mo?dtMs(+m[3],mo,+m[2]):-1}
+ return -1}
+const dtNoDate=t=>!(+t.ts>0);
+const dtNorm=x=>String(x??'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const dtTag=x=>String(x??'').trim().toUpperCase().replace(/\s+/g,'');
+function dateImpUI(){const nb=Object.values(S.tags||{}).filter(dtNoDate).length;
+ return`<div id="dtroot"><p class="mut" style="margin:0 0 8px">Temporary tool. Excel columns: <b>TAG NO</b>, <b>ITEM NAME</b>, <b>DATE</b>. Only tags with a <b>blank date</b> are filled. Tags that already have a date are <b>never changed</b>. Nothing is written until you press Apply.</p><p style="margin:0 0 8px">Tags with blank date right now: <b>${nb}</b></p><div class="bar"><input type="file" id="dtf" accept=".xlsx,.xls,.csv" style="width:auto"><button class="p" onclick="dtCheck()">Check file</button></div><div id="dtout"></div></div>`}
+window.dtCheck=async()=>{const o=$('#dtout');if(!o)return;DTP=null;const f=$('#dtf').files[0];if(!f){o.innerHTML='<p class="empty">Choose the Excel file first.</p>';return}
+ o.innerHTML='<p class="mut">Reading…</p>';
+ try{
+  const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});let rows=null,hr=-1,ct=-1,ci=-1,cd=-1,sn='';
+  for(const nm of wb.SheetNames){const r=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,raw:true,defval:''});
+   for(let i=0;i<Math.min(r.length,30);i++){const h=r[i].map(dtNorm),a=h.findIndex(x=>/^tag(no|number|num)?$/.test(x)),d=h.findIndex(x=>/^(date|tagdate|dt)$/.test(x)||(x.includes('date')&&!x.includes('update')));if(a>=0&&d>=0){rows=r;hr=i;ct=a;cd=d;ci=h.findIndex(x=>/^item(name)?$/.test(x));sn=nm;break}}
+   if(rows)break}
+  if(!rows){o.innerHTML='<p style="color:var(--red)"><b>Columns not found.</b> The first rows of a sheet must have headings TAG NO and DATE (and ITEM NAME).</p>';return}
+  const up={};Object.keys(S.tags||{}).forEach(x=>up[dtTag(x)]=x);
+  const seen={},miss=[],bad={},blank={},conf=[];let nrow=0;
+  for(let i=hr+1;i<rows.length;i++){const r=rows[i],raw=String(r[ct]??'').trim();if(!raw)continue;nrow++;
+   const real=up[dtTag(raw)];if(!real){miss.push(raw);continue}
+   const v=dtParse(r[cd]);
+   if(v===null){blank[real]=1;continue}
+   if(v<0){bad[real]=raw+' → "'+String(r[cd])+'"';continue}
+   if(seen[real]){if(seen[real].ms!==v&&!conf.includes(real))conf.push(real);continue}
+   seen[real]={ms:v,item:ci>=0?String(r[ci]??'').trim():''}}
+  Object.keys(seen).forEach(x=>{delete blank[x];delete bad[x]});
+  const fill=[],has=[],nm=[];
+  Object.keys(seen).forEach(x=>{const t=S.tags[x];if(!dtNoDate(t)){has.push(x);return}fill.push([x,seen[x].ms]);
+   const si=dtNorm(seen[x].item),ai=dtNorm(t.item||t.name);if(si&&ai&&si!==ai)nm.push(x+': sheet "'+seen[x].item+'" / app "'+(t.item||t.name)+'"')});
+  const fs=new Set(fill.map(a=>a[0])),still=Object.keys(S.tags).filter(x=>dtNoDate(S.tags[x])&&!fs.has(x));
+  DTP={fill};
+  const L=(t,a,c)=>a.length?`<details style="margin:4px 0"><summary>${t} <b>${a.length}</b></summary><div class="mut" style="max-height:160px;overflow:auto;font-size:12px;word-break:break-word">${a.slice(0,300).map(hx).join(', ')}${a.length>300?' … +'+(a.length-300)+' more':''}</div></details>`:`<div style="margin:4px 0">${t} <b>0</b></div>`;
+  const bd=Object.values(bad),bl=Object.keys(blank);
+  o.innerHTML=`<div class="card" style="margin:6px 0"><div class="mut" style="margin-bottom:6px">Sheet "${hx(sn)}" · ${nrow} rows read</div>
+  <div style="margin:4px 0">✅ Will be filled (blank date in app): <b>${fill.length}</b></div>
+  <div style="margin:4px 0">🔒 Skipped — app tag already has a date: <b>${has.length}</b></div>
+  ${L('❌ Tag No not found in app:',miss)}${L('⚠️ Date in Excel could not be read:',bd)}${L('⚠️ Date cell empty in Excel:',bl)}${L('⚠️ Same tag twice with different dates (first one used):',conf)}${L('ℹ️ Item name differs from app (still filled):',nm)}
+  <div style="margin:4px 0">Tags still blank in app after this import: <b>${still.length}</b></div>
+  ${fill.length?`<div class="mut" style="margin:6px 0">Example: ${fill.slice(0,3).map(a=>hx(a[0])+' → '+fmtD(a[1])).join(' · ')}. Dates are read day-month-year.</div><div class="bar"><button class="p" id="dtgo" onclick="dtApply()">Apply ${fill.length} dates</button></div>`:'<p class="empty">Nothing to fill.</p>'}</div>`;
+ }catch(e){o.innerHTML='<p style="color:var(--red)"><b>Could not read the file:</b> '+hx(e.message||e)+'</p>'}};
+window.dtApply=async()=>{if(!DTP||!DTP.fill.length)return;const o=$('#dtout'),b=$('#dtgo');
+ if(!confirm('Write dates on '+DTP.fill.length+' tags that have a blank date?\n\nTags that already have a date will not be touched.'))return;
+ if(b)b.disabled=true;let done=0,skip=0;
+ try{const l=DTP.fill.filter(([x])=>{const ok=S.tags[x]&&dtNoDate(S.tags[x]);if(!ok)skip++;return ok}); /* re-checked now, so a date set meanwhile is never overwritten */
+  for(let i=0;i<l.length;i+=500){const bt={};l.slice(i,i+500).forEach(([x,ms])=>bt['tags/'+x+'/ts']=ms);await update(R(''),bt);done+=Math.min(500,l.length-i);if(o)o.innerHTML='<p class="mut">Writing… '+done+' / '+l.length+'</p>'}
+  DTP=null;const m='✓ Dates filled on '+done+' tags'+(skip?' ('+skip+' skipped: got a date meanwhile)':'')+'. Check Stock → Date column.';if(o)o.innerHTML='<p><b>'+hx(m)+'</b></p>';toast(m);alert(m)
+ }catch(e){if(b)b.disabled=false;if(o)o.innerHTML='<p style="color:var(--red)"><b>Stopped after '+done+' tags:</b> '+hx(e.message||e)+'. Press Check file and Apply again — tags already done are skipped.</p>'}};
 window.onerror=(m,u,l)=>alert('Error: '+m+' (line '+l+')');
 document.addEventListener('change',e=>{const t=e.target;if(t.tagName=='SELECT'&&t.dataset.f&&(view=='auto'||view=='bulk'))sv(t.dataset.f,t.value)});
 if(window.FB)startAuth();else{addEventListener("fb-ready",startAuth,{once:true});setTimeout(()=>{if(!window.FB)$("#app").innerHTML='<div class="card"><h3>Cannot reach Firebase</h3><p>Check the internet connection and reload.</p></div>'},10000)}
